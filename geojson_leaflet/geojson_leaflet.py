@@ -20,3 +20,4 @@ def main(argv=None):
     if not argv:
         print("ERROR arguments expected.", file=sys.stderr)
         return 2
+    return 0
