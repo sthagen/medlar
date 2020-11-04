@@ -3,6 +3,7 @@
 name = "geojson_leaflet"
 py_version = "3.8"
 version = "0.1.0"
+authors = ["Stefan Hagen <stefan@hagen.link>"]
 
 [tool.pyflow.scripts]
 
