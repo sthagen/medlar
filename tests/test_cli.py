@@ -7,7 +7,7 @@ import geojson_leaflet.cli as cli
 
 
 def test_main_nok_too_many_arguments():
-    message = r"argument of type 'int' is not iterable"
+    message = r"main() takes from 0 to 1 positional arguments but 2 were given"
     with pytest.raises(TypeError, match=message):
         cli.main(1, 2)
 
