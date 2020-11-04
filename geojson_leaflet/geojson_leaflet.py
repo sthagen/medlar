@@ -4,6 +4,8 @@
 import os
 import sys
 
+import geojson
+
 DEBUG_VAR = "LIAISON_DEBUG"
 DEBUG = os.getenv(DEBUG_VAR)
 
@@ -17,4 +19,7 @@ def main(argv=None):
     if not argv:
         print("ERROR arguments expected.", file=sys.stderr)
         return 2
+    obj = geojson.Point((3.1415, 42))
+    if not obj.is_valid:
+        return 1
     return 0
