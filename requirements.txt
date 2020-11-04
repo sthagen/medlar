@@ -2,3 +2,4 @@ black
 geojson
 mypy
 pylint
+pytest
