@@ -19,7 +19,7 @@ def test_main_nok_empty_list(capsys):
     assert err.strip() == expect_err
 
 
-def test_main_ok_int():
+def test_main_ok_int(capsys):
     assert cli.main([42]) is None
     out, err = capsys.readouterr()
     assert out.strip() == ''
