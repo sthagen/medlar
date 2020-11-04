@@ -25,7 +25,7 @@ def main(argv=None):
     my_feature = Feature(geometry=Point((1.6432, -19.123)))
     my_other_feature = Feature(geometry=Point((-80.234, -22.532)))
     feature_collection = FeatureCollection([my_feature, my_other_feature])
-    if not feature_collection
+    if not feature_collection:
         return 1
     if feature_collection.errors():
         return 1
