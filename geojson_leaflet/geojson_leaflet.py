@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=expression-not-assigned,line-too-long
 """"Generate geojson data based leaflet driven web app from flat data files."""
-import datetime as dti
 import os
 import pathlib
 import sys
