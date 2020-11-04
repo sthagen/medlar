@@ -2,7 +2,6 @@
 # pylint: disable=expression-not-assigned,line-too-long
 """"Generate geojson data based leaflet driven web app from flat data files."""
 import os
-import pathlib
 import sys
 import time
 
