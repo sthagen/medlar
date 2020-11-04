@@ -3,7 +3,6 @@
 """"Generate geojson data based leaflet driven web app from flat data files."""
 import os
 import sys
-import time
 
 DEBUG_VAR = "LIAISON_DEBUG"
 DEBUG = os.getenv(DEBUG_VAR)
