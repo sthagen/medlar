@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # pylint: disable=line-too-long
-""""Generate geojson data based leaflet driven web app from flat data files."""
+"""Generate geojson data based leaflet driven web app from flat data files."""
 import sys
 
 import geojson_leaflet.geojson_leaflet as liaison
