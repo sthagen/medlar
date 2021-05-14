@@ -1,0 +1,10 @@
+{
+    "type": "Feature",
+    "properties": {
+        "name": f"<a href='{URL}' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>"
+    },
+    "geometry": {
+        "type": "Point",
+        "coordinates": []
+    }
+}
