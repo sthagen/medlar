@@ -1,8 +1,1 @@
-black
-coverage
-flake8
 geojson
-mypy
-pylint
-pyperf
-pytest
