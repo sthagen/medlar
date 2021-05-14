@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>IrealCAO / {ICAO} ({City}, {CC_HINT}) - Airport</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/navdb/_/leaflet/leaflet.css"/>
+    <script src="/navdb/_/leaflet/leaflet.js"></script>
+    <style>
+        body {{
+            margin-left: 1%;
+            font-family: Verdana, serif;
+        }}
+        #mapid {{
+            width: 98%;
+            height: 600px;
+            border: thin dotted;
+        }}
+        .leaflet-tooltip {{
+            pointer-events: auto;
+        }}
+        html {{font-family: Verdana, Arial, sans-serif;}}
+        a {{color: #0c2d82;}}
+        b {{font-weight: 600;}}
+        h1, h2 {{margin-left: 1rem;}}
+        h1 {{font-weight: 300; text-transform: capitalize;}}
+        h2 {{font-weight: 200;}}
+        p {{margin-left: 2rem;}}
+        .no-decor {{text-decoration: none;}}
+    </style>
+</head>
+<body>
+<main>
+    <section>
+        <h1>HOME <a href="https://path/" class="no-decor">NavDB</a>
+            - ( <a href="https://path/icao/" class="no-decor">IrealCAO</a>
+            | <a href="https://path/icao/{cc_page}.html" class="no-decor">{Cc_page}</a> )
+            / <a href="https://path/icao/{icao}/" class="no-decor">{ICAO}</a>
+            ({City}, {CC_HINT}) - Airport</h1>
+        <div id="mapid"></div>
+        <h2>Satellite Imagery &amp; More</h2>
+        <p>&nbsp;Airport: ICAO <a
+                href="{URL}"
+                class="no-decor" target="_blank">@{LAT_LON}</a>
+            - (<a href="index.json" class="no-decor" target="_blank">data</a> | <a href="index.txt" class="no-decor"
+                                                                                   target="_blank">log</a> | <a
+                    href="index.r.txt" class="no-decor" target="_blank">R source</a>)
+        </p>
+    </section>
+</main>
+<footer>
+    <address><p>Prototype</p></address>
+</footer>
+<script>
+    let geo = null
+    async function load() {{
+        let url = '{icao}-geo.json'
+        try {{
+            geo = await (await fetch(url)).json()
+        }} catch (e) {{
+            console.log('error in loading GeoJSON data')
+        }}
+        // console.log("Here it is")
+        // console.log(geo)
+        let meta = [{LAT_LON}]
+        // let mymap = L.map('mapid').setView(meta, 14)
+    let ggUrl = 'https://{{s}}.google.com/vt/lyrs=s,h&x={{x}}&y={{y}}&z={{z}}'
+    let ggAttr = '&copy; <a href="https://www.google.com/permissions/geoguidelines/attr-guide/" target="_blank">Google</a> and contributors' 
+    let osUrl = 'https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png'
+    let osAttr =  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+    let satellite = L.tileLayer(ggUrl, {{maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: ggAttr}})
+    let streets = L.tileLayer(osUrl, {{maxZoom: 20, attribution: osAttr}})
+/*    L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }}).addTo(mymap)
+*/   
+    let baseLayers = {{
+          "Streets": streets,
+          "Satellite": satellite,
+    }}
+    // let center = L.marker(meta).addTo(mymap)
+    let data_points = geo
+    let pointLayer = L.geoJSON(null, {{
+        pointToLayer: function (feature, latlng) {{
+            label = String(feature.properties.name)
+            return new L.CircleMarker(latlng, {{
+                radius: 1,
+            }}).bindTooltip(label, {{permanent: true, opacity: 0.7}}).openTooltip()
+        }}
+    }})
+    pointLayer.addData(data_points)
+    let mymap = L.map('mapid', {{
+      center: [{LAT_LON}],
+      zoom: 16,
+      layers: [streets, pointLayer]
+    }})
+    // mymap.addLayer(pointLayer)
+    var overlays = {{
+          "Airport": pointLayer
+    }}
+    L.control.layers(baseLayers, overlays).addTo(mymap);
+    
+    // enable Ctrl-Click to find coordinate at click position (hand cursor not so precise, but we can zoom)
+    var popup = L.popup()
+    function onMapClick(e) {{
+      if (e.originalEvent.ctrlKey) {{
+        popup
+          .setLatLng(e.latlng)
+          .setContent("You clicked the map at " + e.latlng.toString())
+          .openOn(mymap)
+      }}
+    }}
+    mymap.on('click', onMapClick)
+    }}
+    load()
+</script>
+</body>
+</html>
+
