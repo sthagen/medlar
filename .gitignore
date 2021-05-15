@@ -128,4 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# local dev stuff
+*~
 .idea
+local_publi.sh
