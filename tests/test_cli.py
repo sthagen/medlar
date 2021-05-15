@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring,unused-import,reimported
-import pathlib
 import pytest  # type: ignore
 
 import geojson_leaflet.cli as cli
 
 
 def test_main_nok_too_many_arguments():
-    message = r"main\(\) takes from 0 to 1 positional arguments but 2 were given"
+    message = r'main\(\) takes from 0 to 1 positional arguments but 2 were given'
     with pytest.raises(TypeError, match=message):
         cli.main(1, 2)
 
