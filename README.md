@@ -1,4 +1,4 @@
-# python-geojson-leaflet
+# mapology
 
 Simple python filters generating leaflet driven apps.
 
