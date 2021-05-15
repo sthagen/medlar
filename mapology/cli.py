@@ -4,7 +4,7 @@
 """Generate geojson data based leaflet driven web app from flat data files."""
 import sys
 
-import geojson_leaflet.geojson_leaflet as liaison
+import mapology.g_filter as liaison
 
 
 # pylint: disable=expression-not-assigned

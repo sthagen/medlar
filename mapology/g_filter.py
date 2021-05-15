@@ -4,41 +4,42 @@
 import os
 import sys
 
-from geojson import Feature, Point, FeatureCollection
-from geojson import dumps as geojson_dumps
+from geojson_pydantic.features import Feature, FeatureCollection
+from geojson_pydantic.geometries import Point
 
-DEBUG_VAR = "LIAISON_DEBUG"
+
+DEBUG_VAR = 'MAPOLOGY_DEBUG'
 DEBUG = os.getenv(DEBUG_VAR)
 
-ENCODING = "utf-8"
-ENCODING_ERRORS_POLICY = "ignore"
+ENCODING = 'utf-8'
+ENCODING_ERRORS_POLICY = 'ignore'
 
 
 def main(argv=None):
     """Drive the derivation."""
     argv = argv if argv else sys.argv[1:]
     if not argv:
-        print("ERROR arguments expected.", file=sys.stderr)
+        print('ERROR arguments expected.', file=sys.stderr)
         return 2
-    obj = Point((3.1415, 42))
-    if not obj.is_valid:
-        return 1
+    obj = Point(coordinates=(3.1415, 42))
+    if not obj:
+        return
+    DEBUG and print('Point:', obj)
     my_feature = Feature(
-        geometry=Point((1.6432, -19.123)),
-        properties = {"name": "<a href='abc' target='_blank'>abc</a>"}
+        geometry=Point(coordinates=(1.6432, -19.123)),
+        properties={'name': "<a href='abc' target='_blank'>abc</a>"}
     )
+    DEBUG and print('Feature:' , my_feature)
     my_other_feature = Feature(
-        geometry=Point((-80.234, -22.532)),
-        properties = {"name": "<a href='def' target='_blank'>def</a>"}
+        geometry=Point(coordinates=(-80.234, -22.532)),
+        properties={'name': "<a href='def' target='_blank'>def</a>"}
     )
+    DEBUG and print('Feature (other):' , my_feature)
     feature_collection = FeatureCollection(
-        [my_feature, my_other_feature],
-        name="test-points-link-labels",
-        crs={"type": "name", "properties": {"name": "urn:ogc:def:crs:OGC:1.3:CRS84"}})
+        features=[my_feature, my_other_feature],
+        name='test-points-link-labels',
+        crs={'type': 'name', 'properties': {'name': 'urn:ogc:def:crs:OGC:1.3:CRS84'}})
     if not feature_collection:
         return 1
-    if feature_collection.errors():
-        return 1
-    assert all([feature_collection[0] == feature_collection['features'][0], feature_collection[1] == my_other_feature]) is True
-    DEBUG and print(geojson_dumps(feature_collection, indent=2))
+    DEBUG and print(feature_collection)
     return 0
