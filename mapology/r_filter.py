@@ -122,7 +122,7 @@ HTML_PAGE = f"""\
     let ggAttr = '&copy; <a href="https://www.google.com/permissions/geoguidelines/attr-guide/"
                             target="_blank">Google</a> and contributors'
     let osUrl = 'https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png'
-    let osAttr =  '&copy; <a href="https://www.openstreetmap.org/copyright" 
+    let osAttr =  '&copy; <a href="https://www.openstreetmap.org/copyright"
                              target="_blank">OpenStreetMap</a> contributors'
     let satellite = L.tileLayer(ggUrl, {{maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: ggAttr}})
     let streets = L.tileLayer(osUrl, {{maxZoom: 20, attribution: osAttr}})
