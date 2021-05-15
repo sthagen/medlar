@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 """Transform the R airport script data portion into a leaflet geojson file.
 Constructing the City hints:
-$ grep airport_name ????/index.json | tr "a-z" "A-Z" | sed "s/\/INDEX\.JSON://g; s/AIRPORT_NAME//g;" | tr -d " " | tr -s '"' | sed s/^/'"'/g
+$ grep airport_name ????/index.json | tr "a-z" "A-Z" | \
+  sed "s/$ESC$/INDEX$ESC$.JSON://g; s/AIRPORT_NAME//g;" | tr -d " " | tr -s '"' | sed s/^/'"'/g
 Valid Google Maps query GET URLs (official with map and pin - but no satellite):
 https://www.google.com/maps/search/?api=1&query={lat}%2c{lon}
 Old unofficial but as of 2020-11-04 still working satellite and pin:
@@ -16,7 +17,7 @@ import sys
 
 ENCODING = 'utf-8'
 
-COUNTRY_PAGE = os.getenv("GEO_COUNTRY_PAGE", '')
+COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 
 REC_SEP = ','
 STDIN_TOKEN = '-'
@@ -48,7 +49,7 @@ ATTRIBUTION = f'{KIND} {ITEM} of '
 Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 
 # GOOGLE_MAPS_URL = f'https://www.google.com/maps/search/?api=1&query={{lat}}%2c{{lon}}'  # Map + pin Documented
-GOOGLE_MAPS_URL = f'https://maps.google.com/maps?t=k&q=loc:{{lat}}+{{lon}}'  # Sat + pin Undocumented
+GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{{lat}}+{{lon}}'  # Sat + pin Undocumented
 
 HTML_PAGE = f"""\
 <!DOCTYPE html>
@@ -118,16 +119,18 @@ HTML_PAGE = f"""\
         let meta = [{LAT_LON}]
         // let mymap = L.map('mapid').setView(meta, 14)
     let ggUrl = 'https://{{s}}.google.com/vt/lyrs=s,h&x={{x}}&y={{y}}&z={{z}}'
-    let ggAttr = '&copy; <a href="https://www.google.com/permissions/geoguidelines/attr-guide/" target="_blank">Google</a> and contributors' 
+    let ggAttr = '&copy; <a href="https://www.google.com/permissions/geoguidelines/attr-guide/"
+                            target="_blank">Google</a> and contributors'
     let osUrl = 'https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png'
-    let osAttr =  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+    let osAttr =  '&copy; <a href="https://www.openstreetmap.org/copyright" 
+                             target="_blank">OpenStreetMap</a> contributors'
     let satellite = L.tileLayer(ggUrl, {{maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: ggAttr}})
     let streets = L.tileLayer(osUrl, {{maxZoom: 20, attribution: osAttr}})
 /*    L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }}).addTo(mymap)
-*/   
+*/
     let baseLayers = {{
           "Streets": streets,
           "Satellite": satellite,
@@ -153,7 +156,7 @@ HTML_PAGE = f"""\
           "Airport": pointLayer
     }}
     L.control.layers(baseLayers, overlays).addTo(mymap);
-    
+
     // enable Ctrl-Click to find coordinate at click position (hand cursor not so precise, but we can zoom)
     var popup = L.popup()
     function onMapClick(e) {{
@@ -173,43 +176,43 @@ HTML_PAGE = f"""\
 """
 
 GEO_JSON_HEADER = {
-    "type": "FeatureCollection",
-    "name": f"Airport - {ICAO} ({City}, {CC_HINT})",
-    "crs": {
-        "type": "name",
-        "properties": {
-            "name": "urn:ogc:def:crs:OGC:1.3:CRS84",
+    'type': 'FeatureCollection',
+    'name': 'Airport - {ICAO} ({City}, {CC_HINT})',
+    'crs': {
+        'type': 'name',
+        'properties': {
+            'name': 'urn:ogc:def:crs:OGC:1.3:CRS84',
         },
     },
-    "features": [],
+    'features': [],
 }
 
 GEO_JSON_FEATURE = {
-    "type": "Feature",
-    "properties": {
-        "name": f"<a href='{URL}' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
+    'type': 'Feature',
+    'properties': {
+        'name': "<a href='{URL}' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
     },
-    "geometry": {
-        "type": "Point",
-        "coordinates": [],  # Note: lon, lat
+    'geometry': {
+        'type': 'Point',
+        'coordinates': [],  # Note: lon, lat
     },
 }
 
 # load data like: {"prefix/00/00C/:": "ANIMAS",}
-with open("prefix_airport_names_for_index.json", "rt", encoding=ENCODING) as handle:
+with open('prefix_airport_names_for_index.json', 'rt', encoding=ENCODING) as handle:
     airport_path_to_name = json.load(handle)
 
 
 def icao_from_key_path(text):
     """HACK A DID ACK"""
-    return text.rstrip("/:").rsplit("/", 1)[1]
+    return text.rstrip('/:').rsplit('/', 1)[1]
 
 
 # Example: {"GCFV": "FUERTEVENTURA",}
 airport_name = {icao_from_key_path(k): v for k, v in airport_path_to_name}
 
 # load data like: {"AG": "Solomon Islands",}
-with open("country_prefix_to_country_name.json", "rt", encoding=ENCODING) as handle:
+with open('country_prefix_to_country_name.json', 'rt', encoding=ENCODING) as handle:
     flat_prefix = json.load(handle)
 
 
@@ -230,7 +233,7 @@ def read_stdin():
 
 def read_file(path):
     """A simple file line based reader (generator)."""
-    with open(path, "rt", encoding="ENCODING") as handle:
+    with open(path, 'rt', encoding='ENCODING') as handle:
         yield handle.readline()
 
 
@@ -304,12 +307,12 @@ def main(argv=None):
     seen = {k: False for k in (AIRP, RUNW, FREQ, LOCA, GLID)}
     data = {}
     for line in reader():
-        # print("Read:", line, end='')
+        # print('Read:', line, end='')
         if on:
             record = line.strip().strip(TRIGGER_END_OF_DATA)
             found = parse(record, seen, data)
             if not found:
-                print("WARNING Unhandled ->>>>>>", record)
+                print('WARNING Unhandled ->>>>>>', record)
         if not on:
             on = line.startswith(TRIGGER_START_OF_DATA)
         else:
@@ -412,7 +415,7 @@ def main(argv=None):
 
         if geojson_path is None:
             geojson_path = f'{root_icao.lower()}-geo.json'
-        with open(geojson_path, "wt", encoding=ENCODING) as handle:
+        with open(geojson_path, 'wt', encoding=ENCODING) as handle:
             json.dump(geojson, handle, indent=2)
 
         html_dict = {
@@ -431,12 +434,11 @@ def main(argv=None):
         for key, replacement in html_dict.items():
             html_page = html_page.replace(key, replacement)
         html_path = f'{root_icao.lower()}.html'
-        with open(html_path, "wt", encoding=ENCODING) as handle:
+        with open(html_path, 'wt', encoding=ENCODING) as handle:
             handle.write(html_page)
 
     else:
-        print("WARNING: no airport found in R source.")
+        print('WARNING: no airport found in R source.')
 
 
 sys.exit(main(sys.argv[1:]))
-
