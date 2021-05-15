@@ -2,7 +2,7 @@
 # pylint: disable=missing-docstring,unused-import,reimported
 import pytest  # type: ignore
 
-import geojson_leaflet.cli as cli
+import mapology.cli as cli
 
 
 def test_main_nok_too_many_arguments():
