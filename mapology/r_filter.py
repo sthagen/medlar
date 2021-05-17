@@ -127,8 +127,8 @@ def read_file(path: str) -> Iterator[str]:
     """A simple file line based reader (generator)."""
     with open(path, 'rt', encoding=ENCODING) as r_handle:
         for line in r_handle:
-            print(line)
-            yield line
+            print(line.strip())
+            yield line.strip()
 
 
 def is_runway(label: str) -> bool:
@@ -163,7 +163,13 @@ def parse(record: str, seen: Dict[str, bool], data: Dict[str, List[Point]]) -> b
         # print(data[aspect][-1])
         return True
 
-    label, lat, lon = record.split(REC_SEP)
+    try:
+        label, lat, lon = record.split(REC_SEP)
+    except ValueError as err:
+        print('DEBUG: <<<', record, '>>>')
+        print(err)
+        return False
+
     point = Point(label, lat, lon)
     if not seen[AIRP]:
         return update(AIRP, point)
@@ -288,7 +294,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         map_folder = pathlib.Path(prefix_root, root_icao[:2], root_icao)
         map_folder.mkdir(parents=True, exist_ok=True)
         if geojson_path == DERIVE_GEOJSON_NAME:
-            geojson_path = pathlib.Path(map_folder, f'{root_icao.lower()}-geo.json')
+            geojson_path = str(pathlib.Path(map_folder, f'{root_icao.lower()}-geo.json'))
         with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
             json.dump(geojson, geojson_handle, indent=2)
 
