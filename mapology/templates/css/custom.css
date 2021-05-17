@@ -1,0 +1,47 @@
+body {
+    margin-left: 1%;
+    font-family: Verdana, serif;
+}
+
+#mapid {
+    width: 98%;
+    height: 600px;
+    border: thin dotted;
+}
+
+.leaflet-tooltip {
+    pointer-events: auto;
+}
+
+html {
+    font-family: Verdana, Arial, sans-serif;
+}
+
+a {
+    color: #0c2d82;
+}
+
+b {
+    font-weight: 600;
+}
+
+h1, h2 {
+    margin-left: 1rem;
+}
+
+h1 {
+    font-weight: 300;
+    text-transform: capitalize;
+}
+
+h2 {
+    font-weight: 200;
+}
+
+p {
+    margin-left: 2rem;
+}
+
+.no-decor {
+    text-decoration: none;
+}
