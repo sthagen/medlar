@@ -61,7 +61,7 @@ Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}'  # Sat + pin Undocumented
 
 # load html poor person template from file
-with open(pathlib.Path('mapology', 'templates', 'page.html'), 'rt', encoding=ENCODING) as handle:
+with open(pathlib.Path('mapology', 'templates', 'html', 'page.html'), 'rt', encoding=ENCODING) as handle:
     HTML_PAGE = handle.read()
 
 GEO_JSON_HEADER = {
@@ -150,40 +150,32 @@ def maybe_glideslope(label: str) -> bool:
 
 def parse(record: str, seen: Dict[str, bool], data: Dict[str, List[Point]]) -> bool:
     """Parse the record in a context sensitive manner (seen) into data."""
+
+    def update(aspect: str, new_point: Point) -> bool:
+        """DRY."""
+        if aspect not in data:
+            data[aspect] = []
+        data[aspect].append(new_point)
+        seen[aspect] = True
+        print(data[aspect][-1])
+        return True
+
     label, lat, lon = record.split(REC_SEP)
+    point = Point(label, lat, lon)
     if not seen[AIRP]:
-        data[AIRP] = [Point(label, lat, lon)]
-        seen[AIRP] = True
-        print(data[AIRP])
-        return True
+        return update(AIRP, point)
+
+    if is_frequency(label):  # ARINC424 source ma provide airports without runways but with frequencies
+        return update(FREQ, point)
+
     if is_runway(label):
-        if RUNW not in data:
-            data[RUNW] = []
-        data[RUNW].append(Point(label, lat, lon))
-        seen[RUNW] = True
-        print(data[RUNW][-1])
-        return True
-    if is_frequency(label):  # ARINC424 source has airports without runways but with frequencies
-        if FREQ not in data:
-            data[FREQ] = []
-        data[FREQ].append(Point(label, lat, lon))
-        seen[FREQ] = True
-        print(data[FREQ][-1])
-        return True
+        return update(RUNW, point)
+
     if seen[RUNW] and maybe_localizer(label):
-        if LOCA not in data:
-            data[LOCA] = []
-        data[LOCA].append(Point(label, lat, lon))
-        seen[LOCA] = True
-        print(data[LOCA][-1])
-        return True
+        return update(LOCA, point)
     if seen[RUNW] and maybe_glideslope(label):
-        if GLID not in data:
-            data[GLID] = []
-        data[GLID].append(Point(label, lat, lon))
-        seen[GLID] = True
-        print(data[GLID][-1])
-        return True
+        return update(GLID, point)
+
     return False
 
 
@@ -207,7 +199,7 @@ def parse_data(reader: Callable[[], Iterator[str]]) -> Tuple[Dict[str, bool], Di
     return seen, data
 
 
-def make_feature(feature_data: List[Point], kind: str, cc_hint: str, root_icao: str, root_coords: tuple[str, str]) -> List[FeatureDict]:
+def make_feature(feature_data: List[Point], kind: str, cc: str, ric: str) -> List[FeatureDict]:
     """DRY."""
     local_features = []
     for triplet in feature_data:
@@ -216,23 +208,11 @@ def make_feature(feature_data: List[Point], kind: str, cc_hint: str, root_icao: 
         lon_str = triplet.lon
         feature = copy.deepcopy(GEO_JSON_FEATURE)
         name = feature['properties']['name']  # type: ignore
-        name = name.replace(ICAO, root_icao).replace(KIND, kind)
+        name = name.replace(ICAO, ric).replace(KIND, kind)
         name = name.replace(ITEM, label).replace(TEXT, label)
-        name = name.replace(CITY, airport_name[root_icao])
-        name = name.replace(CC_HINT, cc_hint)
-
-        lat, lon = float(lat_str), float(lon_str)
-        if kind == 'Frequency':
-            freq_coords = (lon_str, lat_str)
-            if freq_coords != root_coords:
-                name = name.replace(TEXT, label)  # type: ignore
-                name = name.replace(URL, GOOGLE_MAPS_URL.format(lat=lat, lon=lon))  # type: ignore
-            else:
-                name = name.replace(TEXT, root_icao)  # type: ignore
-                name = name.replace(URL, GOOGLE_MAPS_URL.format(lat=lat, lon=lon))  # type: ignore
-                # name = name.replace(URL, './')  # type: ignore
-        else:
-            name = name.replace(URL, GOOGLE_MAPS_URL.format(lat=lat, lon=lon))
+        name = name.replace(CITY, airport_name[ric])
+        name = name.replace(CC_HINT, cc)
+        name = name.replace(URL, GOOGLE_MAPS_URL.format(lat=float(lat_str), lon=float(lon_str)))
 
         feature['properties']['name'] = name  # type: ignore
         feature['geometry']['coordinates'].append(float(lon_str))  # type: ignore
@@ -243,13 +223,35 @@ def make_feature(feature_data: List[Point], kind: str, cc_hint: str, root_icao: 
     return local_features
 
 
+def make_airport(point: Point, cc: str, ric: str) -> FeatureDict:
+    """DRY."""
+    geojson = copy.deepcopy(GEO_JSON_HEADER)
+    name = geojson['name']
+    name = name.replace(ICAO, ric).replace(City, airport_name[ric].title())  # type: ignore
+    name = name.replace(CC_HINT, cc)  # type: ignore
+    geojson['name'] = name
+
+    airport = copy.deepcopy(GEO_JSON_FEATURE)
+    name = airport['properties']['name']  # type: ignore
+    name = name.replace(ICAO, ric).replace(TEXT, ric).replace(ATTRIBUTION, '')  # type: ignore
+    name = name.replace(CITY, airport_name[ric].title())  # type: ignore
+    name = name.replace(URL, './')  # type: ignore
+    name = name.replace(CC_HINT, cc)  # type: ignore
+    airport['properties']['name'] = name  # type: ignore
+    airport['geometry']['coordinates'].append(float(point.lon))  # type: ignore
+    airport['geometry']['coordinates'].append(float(point.lat))  # type: ignore
+
+    geojson['features'] = [airport]  # type: ignore
+    return geojson
+
+
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the derivation."""
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) == 2:
         r_path, geojson_path = argv[:2]
     else:
-        r_path, geojson_path = STDIN_TOKEN, "default.geojson"
+        r_path, geojson_path = STDIN_TOKEN, 'default.geojson'
     print(r_path)
     print(geojson_path)
     reader = read_stdin if r_path == STDIN_TOKEN else functools.partial(read_file, r_path)
@@ -261,37 +263,22 @@ def main(argv: Union[List[str], None] = None) -> int:
         triplet = data[AIRP][0]
         root_icao, root_lat, root_lon = triplet.label, float(triplet.lat), float(triplet.lon)
         cc_hint = flat_prefix[root_icao[:2]]
-        root_coords = (triplet.lon, triplet.lat)
-        geojson = copy.deepcopy(GEO_JSON_HEADER)
-        name = geojson['name']
-        name = name.replace(ICAO, root_icao).replace(City, airport_name[root_icao].title())  # type: ignore
-        name = name.replace(CC_HINT, cc_hint)  # type: ignore
-        geojson['name'] = name
+        markers = cc_hint, root_icao
 
-        airport = copy.deepcopy(GEO_JSON_FEATURE)
-        name = airport['properties']['name']  # type: ignore
-        name = name.replace(ICAO, root_icao).replace(TEXT, root_icao).replace(ATTRIBUTION, '')  # type: ignore
-        name = name.replace(CITY, airport_name[root_icao].title())  # type: ignore
-        name = name.replace(URL, './')  # type: ignore
-        name = name.replace(CC_HINT, cc_hint)  # type: ignore
-        airport['properties']['name'] = name  # type: ignore
-        airport['geometry']['coordinates'].append(float(triplet.lon))  # type: ignore
-        airport['geometry']['coordinates'].append(float(triplet.lat))  # type: ignore
-
-        geojson['features'].append(airport)  # type: ignore
+        geojson = make_airport(triplet, *markers)
 
         if RUNW in data:
-            geojson['features'].extend(make_feature(data[RUNW], 'Runway', cc_hint, root_icao, root_coords))  # type: ignore
-            runway_count = len(data[RUNW])
+            geojson['features'].extend(make_feature(data[RUNW], 'Runway', *markers))  # type: ignore
+            runway_count = len(data[RUNW])  # HACK A DID ACK for zoom heuristics
 
         if FREQ in data:
-            geojson['features'].extend(make_feature(data[FREQ], 'Frequency', cc_hint, root_icao, root_coords))  # type: ignore
+            geojson['features'].extend(make_feature(data[FREQ], 'Frequency', *markers))  # type: ignore
 
         if LOCA in data:
-            geojson['features'].extend(make_feature(data[LOCA], 'Localizer', cc_hint, root_icao, root_coords))  # type: ignore
+            geojson['features'].extend(make_feature(data[LOCA], 'Localizer', *markers))  # type: ignore
 
         if GLID in data:
-            geojson['features'].extend(make_feature(data[GLID], 'Glideslope', cc_hint, root_icao, root_coords))  # type: ignore
+            geojson['features'].extend(make_feature(data[GLID], 'Glideslope', *markers))  # type: ignore
 
         if geojson_path is None:
             geojson_path = f'{root_icao.lower()}-geo.json'
