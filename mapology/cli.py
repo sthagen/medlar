@@ -3,12 +3,13 @@
 # pylint: disable=line-too-long
 """Generate geojson data based leaflet driven web app from flat data files."""
 import sys
+from typing import List, Union
 
 import mapology.g_filter as liaison
 
 
 # pylint: disable=expression-not-assigned
-def main(argv=None):
+def main(argv: Union[List[str], None] = None) -> int:
     """Delegate processing to functional module."""
     argv = sys.argv[1:] if argv is None else argv
-    liaison.main(argv)
+    return liaison.main(argv)
