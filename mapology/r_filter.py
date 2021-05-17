@@ -24,6 +24,9 @@ ENCODING = 'utf-8'
 COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 PATH_NAV = os.getenv('GEO_PATH_NAV', '')
 
+FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
+DERIVE_GEOJSON_NAME = 'derive'
+
 REC_SEP = ','
 STDIN_TOKEN = '-'
 TRIGGER_START_OF_DATA = "csv <- 'marker_label,lat,lon"
@@ -157,7 +160,7 @@ def parse(record: str, seen: Dict[str, bool], data: Dict[str, List[Point]]) -> b
             data[aspect] = []
         data[aspect].append(new_point)
         seen[aspect] = True
-        print(data[aspect][-1])
+        # print(data[aspect][-1])
         return True
 
     label, lat, lon = record.split(REC_SEP)
@@ -251,11 +254,12 @@ def main(argv: Union[List[str], None] = None) -> int:
     if len(argv) == 2:
         r_path, geojson_path = argv[:2]
     else:
-        r_path, geojson_path = STDIN_TOKEN, 'default.geojson'
-    print(r_path)
-    print(geojson_path)
+        r_path, geojson_path = STDIN_TOKEN, DERIVE_GEOJSON_NAME
+
+    if not geojson_path:
+        geojson_path = DERIVE_GEOJSON_NAME
+
     reader = read_stdin if r_path == STDIN_TOKEN else functools.partial(read_file, r_path)
-    print(reader)
     seen, data = parse_data(reader)  # type: ignore
 
     runway_count = 0
@@ -280,8 +284,11 @@ def main(argv: Union[List[str], None] = None) -> int:
         if GLID in data:
             geojson['features'].extend(make_feature(data[GLID], 'Glideslope', *markers))  # type: ignore
 
-        if geojson_path is None:
-            geojson_path = f'{root_icao.lower()}-geo.json'
+        prefix_root = pathlib.Path(FS_PREFIX_PATH)
+        map_folder = pathlib.Path(prefix_root, root_icao[:2], root_icao)
+        map_folder.mkdir(parents=True, exist_ok=True)
+        if geojson_path == DERIVE_GEOJSON_NAME:
+            geojson_path = pathlib.Path(map_folder, f'{root_icao.lower()}-geo.json')
         with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
             json.dump(geojson, geojson_handle, indent=2)
 
@@ -303,7 +310,8 @@ def main(argv: Union[List[str], None] = None) -> int:
         html_page = HTML_PAGE
         for key, replacement in html_dict.items():
             html_page = html_page.replace(key, replacement)
-        html_path = f'{root_icao.lower()}.html'
+
+        html_path = pathlib.Path(map_folder, 'index.html')
         with open(html_path, 'wt', encoding=ENCODING) as html_handle:
             html_handle.write(html_page)
 
