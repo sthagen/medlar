@@ -271,7 +271,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     runway_count = 0
     if data and AIRP in data:
         triplet = data[AIRP][0]
-        root_icao, root_lat, root_lon = triplet.label, float(triplet.lat), float(triplet.lon)
+        root_icao, root_lat, root_lon = triplet.label.strip(), float(triplet.lat), float(triplet.lon)
         cc_hint = flat_prefix[root_icao[:2]]
         markers = cc_hint, root_icao
 
