@@ -295,6 +295,21 @@ def add_prefix(icp: str, cc: str) -> PHeaderDict:
     return geojson
 
 
+def add_airport(point: Point, cc: str, ric: str) -> PFeatureDict:
+    """DRY."""
+    airport = copy.deepcopy(GEO_JSON_PREFIX_FEATURE)
+    name = airport['properties']['name']  # type: ignore
+    name = name.replace(ICAO, ric).replace(TEXT, ric).replace(ATTRIBUTION, '')  # type: ignore
+    name = name.replace(CITY, airport_name[ric].title())  # type: ignore
+    name = name.replace(URL, './')  # type: ignore
+    name = name.replace(CC_HINT, cc)  # type: ignore
+    airport['properties']['name'] = name  # type: ignore
+    airport['geometry']['coordinates'].append(float(point.lon))  # type: ignore
+    airport['geometry']['coordinates'].append(float(point.lat))  # type: ignore
+
+    return airport
+
+
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the derivation."""
     argv = sys.argv[1:] if argv is None else argv
@@ -336,6 +351,11 @@ def main(argv: Union[List[str], None] = None) -> int:
         if ic_prefix not in prefix_store:
             # Create initial entry for ICAO prefix
             prefix_store[ic_prefix] = add_prefix(ic_prefix, cc_hint)
+
+        ic_airports = set(prefix_store[ic_prefix]['features'])
+        ic_airport = add_airport(triplet, *markers)
+        if ic_airport not in ic_airports:
+            prefix_store[ic_prefix]['features'].append(ic_airport)
 
         prefix_root = pathlib.Path(FS_PREFIX_PATH)
         map_folder = pathlib.Path(prefix_root, ic_prefix, root_icao)
