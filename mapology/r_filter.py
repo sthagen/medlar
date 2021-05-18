@@ -352,9 +352,9 @@ def main(argv: Union[List[str], None] = None) -> int:
             # Create initial entry for ICAO prefix
             prefix_store[ic_prefix] = add_prefix(ic_prefix, cc_hint)
 
-        ic_airports = set(prefix_store[ic_prefix]['features'])
+        ic_airport_names = set(airp['properties']['name'] for airp in prefix_store[ic_prefix]['features'])
         ic_airport = add_airport(triplet, *markers)
-        if ic_airport not in ic_airports:
+        if ic_airport['properties']['name'] not in ic_airport_names:
             prefix_store[ic_prefix]['features'].append(ic_airport)
 
         prefix_root = pathlib.Path(FS_PREFIX_PATH)
