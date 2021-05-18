@@ -18,6 +18,8 @@ import sys
 from typing import Callable, Collection, Dict, Iterator, List, Tuple, Union
 
 FeatureDict = Dict[str, Collection[str]]
+PHeaderDict = Dict[str, Collection[str]]
+PFeatureDict = Dict[str, Collection[str]]
 
 ENCODING = 'utf-8'
 
@@ -42,6 +44,7 @@ CC_HINT = 'CC_HINT'
 City = 'City'
 CITY = City.upper()
 ICAO = 'ICAO'
+IC_PREFIX = 'IC_PREFIX'
 ITEM = 'ITEM'
 KIND = 'KIND'
 PATH = 'PATH'
@@ -57,6 +60,8 @@ cc_page = 'cc_page'
 Cc_page = 'Cc_page'
 
 ATTRIBUTION = f'{KIND} {ITEM} of '
+
+PREFIX_STORE = pathlib.Path('prefix-store.json')
 
 Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 
@@ -89,6 +94,28 @@ GEO_JSON_FEATURE: FeatureDict = {
     },
 }
 
+GEO_JSON_PREFIX_HEADER: PHeaderDict = {
+    'type': 'FeatureCollection',
+    'name': f'Region - {IC_PREFIX} ({CC_HINT})',
+    'crs': {
+        'type': 'name',
+        'properties': {
+            'name': 'urn:ogc:def:crs:OGC:1.3:CRS84',
+        },
+    },
+    'features': [],
+}
+GEO_JSON_PREFIX_FEATURE: PFeatureDict = {
+    'type': 'Feature',
+    'properties': {
+        'name': f"<a href='{URL}' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
+    },
+    'geometry': {
+        'type': 'Point',
+        'coordinates': [],  # Note: lon, lat
+    },
+}
+
 # load data like: {"prefix/00/00C/:": "ANIMAS",}
 with open(pathlib.Path('prefix_airport_names_for_index.json'), 'rt', encoding=ENCODING) as handle:
     airport_path_to_name = json.load(handle)
@@ -106,6 +133,11 @@ prefix_path = {icao_from_key_path(k): k.rstrip(':') for k in airport_path_to_nam
 # load data like: {"AG": "Solomon Islands",}
 with open(pathlib.Path('icao_prefix_to_country_name.json'), 'rt', encoding=ENCODING) as handle:
     flat_prefix = json.load(handle)
+
+prefix_store = {}
+if PREFIX_STORE.exists() and PREFIX_STORE.is_file() and PREFIX_STORE.stat().st_size:
+    with open(PREFIX_STORE, 'rt', encoding=ENCODING) as handle:
+        prefix_store = json.load(handle)
 
 
 def country_page_hack(phrase: str) -> str:
@@ -254,6 +286,15 @@ def make_airport(point: Point, cc: str, ric: str) -> FeatureDict:
     return geojson
 
 
+def add_prefix(icp: str, cc: str) -> PHeaderDict:
+    """DRY."""
+    geojson = copy.deepcopy(GEO_JSON_PREFIX_HEADER)
+    name = geojson['name']
+    name = name.replace(IC_PREFIX, icp).replace(CC_HINT, cc)  # type: ignore
+    geojson['name'] = name
+    return geojson
+
+
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the derivation."""
     argv = sys.argv[1:] if argv is None else argv
@@ -272,7 +313,8 @@ def main(argv: Union[List[str], None] = None) -> int:
     if data and AIRP in data:
         triplet = data[AIRP][0]
         root_icao, root_lat, root_lon = triplet.label.strip(), float(triplet.lat), float(triplet.lon)
-        cc_hint = flat_prefix[root_icao[:2]]
+        ic_prefix = root_icao[:2]
+        cc_hint = flat_prefix[ic_prefix]
         markers = cc_hint, root_icao
 
         geojson = make_airport(triplet, *markers)
@@ -290,8 +332,13 @@ def main(argv: Union[List[str], None] = None) -> int:
         if GLID in data:
             geojson['features'].extend(make_feature(data[GLID], 'Glideslope', *markers))  # type: ignore
 
+        # Process prefix store
+        if ic_prefix not in prefix_store:
+            # Create initial entry for ICAO prefix
+            prefix_store[ic_prefix] = add_prefix(ic_prefix, cc_hint)
+
         prefix_root = pathlib.Path(FS_PREFIX_PATH)
-        map_folder = pathlib.Path(prefix_root, root_icao[:2], root_icao)
+        map_folder = pathlib.Path(prefix_root, ic_prefix, root_icao)
         map_folder.mkdir(parents=True, exist_ok=True)
         if geojson_path == DERIVE_GEOJSON_NAME:
             geojson_path = str(pathlib.Path(map_folder, f'{root_icao.lower()}-geo.json'))
@@ -320,6 +367,9 @@ def main(argv: Union[List[str], None] = None) -> int:
         html_path = pathlib.Path(map_folder, 'index.html')
         with open(html_path, 'wt', encoding=ENCODING) as html_handle:
             html_handle.write(html_page)
+
+        with open(PREFIX_STORE, 'wt', encoding=ENCODING) as geojson_prefix_handle:
+            json.dump(prefix_store, geojson_prefix_handle, indent=2)
 
     else:
         print('WARNING: no airport found in R source.')
