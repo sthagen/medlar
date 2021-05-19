@@ -386,6 +386,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             'IrealCAO': ICAO,
             'index.json': geo_json_name,
             'index.r.txt': r_file_name,
+            'index.txt': f'airport-{root_icao}.json',
         }
         html_page = HTML_PAGE
         for key, replacement in html_dict.items():
