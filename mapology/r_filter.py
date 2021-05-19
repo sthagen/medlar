@@ -370,7 +370,8 @@ def main(argv: Union[List[str], None] = None) -> int:
             json.dump(geojson, geojson_handle, indent=2)
 
         html_dict = {
-            ANCHOR: prefix_path[root_icao],
+            f'{ANCHOR}/IC_PREFIX/ICAO': prefix_path[root_icao],
+            f'{ANCHOR}/IC_PREFIX': f'prefix/{ic_prefix}/',
             ICAO: root_icao,
             icao: root_icao.lower(),
             City: airport_name[root_icao].title(),
