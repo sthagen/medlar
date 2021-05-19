@@ -316,6 +316,24 @@ def main(argv: Union[List[str], None] = None) -> int:
     geojson_path = DERIVE_GEOJSON_NAME
 
     if geojson_airports:
+        min_lat, min_lon = 90, 180
+        max_lat, max_lon = -90, -180
+        coordinates = []
+        for airport in geojson_airports["features"]:
+            coords = airport["geometry"]["coordinates"]
+            lon, lat = coords[0], coords[1]
+            coordinates.append((lon, lat))
+            min_lat = min(min_lat, lat)
+            min_lon = min(min_lon, lon)
+            max_lat = max(max_lat, lat)
+            max_lon = max(max_lon, lon)
+
+        prefix_lat = 0.5 * (max_lat + min_lat)
+        prefix_lon = 0.5 * (max_lon + min_lon)
+        print(f"Found {len(coordinates)} airports for prefix {ic_prefix}")
+        bbox_disp = f"[({min_lat}, {min_lon}), ({max_lat}, {max_lon})]"
+        print(f"Identified bounding box lat, lon in {bbox_disp} for prefix {ic_prefix}")
+        print(f"Set center of prefix map to lat, lon = ({prefix_lat}, {prefix_lon}) for prefix {ic_prefix}")
         prefix_root = pathlib.Path(FS_PREFIX_PATH)
         map_folder = pathlib.Path(prefix_root, ic_prefix)
         map_folder.mkdir(parents=True, exist_ok=True)
@@ -330,6 +348,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             CC_HINT: cc_hint,
             cc_page: country_page_hack(cc_hint),
             Cc_page: country_page_hack(cc_hint).title(),
+            LAT_LON: f'{prefix_lat},{prefix_lon}',
             PATH: PATH_NAV,
             ZOOM: str(max(DEFAULT_ZOOM - 10 + 1, 9)),
             'IrealCAO': ICAO,
