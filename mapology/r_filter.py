@@ -377,7 +377,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             LAT_LON: f'{root_lat},{root_lon}',
             PATH: PATH_NAV,
             URL: GOOGLE_MAPS_URL.format(lat=root_lat, lon=root_lon),
-            ZOOM: str(max(DEFAULT_ZOOM - runway_count + 3, 9)),
+            ZOOM: str(max(DEFAULT_ZOOM - runway_count + 1, 9)),
             'IrealCAO': ICAO,
         }
         html_page = HTML_PAGE
