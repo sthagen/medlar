@@ -25,6 +25,7 @@ ENCODING = 'utf-8'
 
 COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 PATH_NAV = os.getenv('GEO_PATH_NAV', '')
+HOST_NAV = os.getenv('GEO_HOST_NAV', 'localhost')
 AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
 
 FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
@@ -46,9 +47,11 @@ City = 'City'
 CITY = City.upper()
 ICAO = 'ICAO'
 IC_PREFIX = 'IC_PREFIX'
+IC_PREFIX_ICAO = f'{IC_PREFIX}_{ICAO}'
 ITEM = 'ITEM'
 KIND = 'KIND'
 PATH = 'PATH'
+HOST = 'HOST'
 ANCHOR = 'ANCHOR'
 TEXT = 'TEXT'
 URL = 'URL'
@@ -370,7 +373,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             json.dump(geojson, geojson_handle, indent=2)
 
         html_dict = {
-            f'{ANCHOR}/{IC_PREFIX}/{ICAO}/': prefix_path[root_icao],
+            f'{ANCHOR}/{IC_PREFIX_ICAO}': prefix_path[root_icao],
             f'{ANCHOR}/{IC_PREFIX}': f'prefix/{ic_prefix}/',
             ICAO: root_icao,
             icao: root_icao.lower(),
@@ -381,6 +384,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             Cc_page: country_page_hack(cc_hint).title(),
             LAT_LON: f'{root_lat},{root_lon}',
             PATH: PATH_NAV,
+            HOST: HOST_NAV,
             URL: GOOGLE_MAPS_URL.format(lat=root_lat, lon=root_lon),
             ZOOM: str(max(DEFAULT_ZOOM - runway_count + 1, 9)),
             'IrealCAO': ICAO,
