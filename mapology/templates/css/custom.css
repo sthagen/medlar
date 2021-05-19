@@ -1,6 +1,7 @@
 body {
     margin-left: 1%;
     font-family: Verdana, serif;
+    padding: 1rem;
 }
 
 #mapid {
@@ -44,4 +45,20 @@ p {
 
 .no-decor {
     text-decoration: none;
+}
+
+td, th {
+    width: 4rem;
+    height: 2rem;
+    border: 1px solid #ccc;
+    text-align: center;
+}
+
+th {
+    background: lightblue;
+    border-color: white;
+}
+
+td:hover {
+  background-color: #9CDCFE;
 }
