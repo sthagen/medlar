@@ -45,7 +45,7 @@ ANCHOR = 'ANCHOR'
 TEXT = 'TEXT'
 URL = 'URL'
 ZOOM = 'ZOOM'
-DEFAULT_ZOOM = 16
+DEFAULT_ZOOM = 4
 
 icao = 'icao_lower'
 ic_prefix_token = 'ic_prefix_lower'
@@ -350,7 +350,8 @@ def main(argv: Union[List[str], None] = None) -> int:
             Cc_page: country_page_hack(cc_hint).title(),
             LAT_LON: f'{prefix_lat},{prefix_lon}',
             PATH: PATH_NAV,
-            ZOOM: str(max(DEFAULT_ZOOM - 10 + 1, 9)),
+            ZOOM: str(DEFAULT_ZOOM),
+            IC_PREFIX: ic_prefix,
             'IrealCAO': ICAO,
         }
         html_page = HTML_PAGE
