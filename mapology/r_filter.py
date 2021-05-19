@@ -25,6 +25,7 @@ ENCODING = 'utf-8'
 
 COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 PATH_NAV = os.getenv('GEO_PATH_NAV', '')
+AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
 
 FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
 DERIVE_GEOJSON_NAME = 'derive'
@@ -70,7 +71,7 @@ GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}'  # Sat + 
 
 # load html poor person template from file
 with open(pathlib.Path('mapology', 'templates', 'html', 'page.html'), 'rt', encoding=ENCODING) as handle:
-    HTML_PAGE = handle.read()
+    HTML_PAGE = handle.read().replace('AERONAUTICAL_ANNOTATIONS', AERONAUTICAL_ANNOTATIONS)
 
 GEO_JSON_HEADER = {
     'type': 'FeatureCollection',
