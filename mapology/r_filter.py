@@ -301,7 +301,7 @@ def add_airport(point: Point, cc: str, ric: str) -> PFeatureDict:
     name = airport['properties']['name']  # type: ignore
     name = name.replace(ICAO, ric).replace(TEXT, ric).replace(ATTRIBUTION, '')  # type: ignore
     name = name.replace(CITY, airport_name[ric].title())  # type: ignore
-    name = name.replace(URL, './')  # type: ignore
+    name = name.replace(URL, f'{ric}/')  # type: ignore
     name = name.replace(CC_HINT, cc)  # type: ignore
     airport['properties']['name'] = name  # type: ignore
     airport['geometry']['coordinates'].append(float(point.lon))  # type: ignore
