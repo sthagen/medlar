@@ -316,8 +316,10 @@ def main(argv: Union[List[str], None] = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) == 2:
         r_path, geojson_path = argv[:2]
+        r_file_name = pathlib.Path(r_path).name
     else:
         r_path, geojson_path = STDIN_TOKEN, DERIVE_GEOJSON_NAME
+        r_file_name = '#'
 
     if not geojson_path:
         geojson_path = DERIVE_GEOJSON_NAME
@@ -363,6 +365,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         map_folder.mkdir(parents=True, exist_ok=True)
         if geojson_path == DERIVE_GEOJSON_NAME:
             geojson_path = str(pathlib.Path(map_folder, f'{root_icao.lower()}-geo.json'))
+        geo_json_name = pathlib.Path(geojson_path).name
         with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
             json.dump(geojson, geojson_handle, indent=2)
 
@@ -380,6 +383,8 @@ def main(argv: Union[List[str], None] = None) -> int:
             URL: GOOGLE_MAPS_URL.format(lat=root_lat, lon=root_lon),
             ZOOM: str(max(DEFAULT_ZOOM - runway_count + 1, 9)),
             'IrealCAO': ICAO,
+            'index.json': geo_json_name,
+            'index.r.txt': r_file_name,
         }
         html_page = HTML_PAGE
         for key, replacement in html_dict.items():
