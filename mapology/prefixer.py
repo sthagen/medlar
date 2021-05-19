@@ -17,6 +17,7 @@ ENCODING = 'utf-8'
 
 COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 PATH_NAV = os.getenv('GEO_PATH_NAV', '')
+HOST_NAV = os.getenv('GEO_HOST_NAV', 'localhost')
 AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
 
 FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
@@ -350,6 +351,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             Cc_page: country_page_hack(cc_hint).title(),
             LAT_LON: f'{prefix_lat},{prefix_lon}',
             PATH: PATH_NAV,
+            HOST: HOST_NAV,
             ZOOM: str(DEFAULT_ZOOM),
             IC_PREFIX: ic_prefix,
             'IrealCAO': ICAO,
