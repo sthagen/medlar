@@ -47,6 +47,10 @@ p {
     text-decoration: none;
 }
 
+tr {
+    white-space:nowrap;
+}
+
 td, th {
     width: 4rem;
     height: 2rem;

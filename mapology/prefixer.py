@@ -1,17 +1,11 @@
 #! /usr/bin/env python
 """Generate prefix page for the requested ICAO prefix."""
 import collections
-import copy
-import functools
 import json
 import os
 import pathlib
 import sys
-from typing import Callable, Collection, Dict, Iterator, List, Tuple, Union
-
-FeatureDict = Dict[str, Collection[str]]
-PHeaderDict = Dict[str, Collection[str]]
-PFeatureDict = Dict[str, Collection[str]]
+from typing import List, Union
 
 ENCODING = 'utf-8'
 
@@ -68,50 +62,6 @@ GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}'  # Sat + 
 with open(pathlib.Path('mapology', 'templates', 'html', 'prefix.html'), 'rt', encoding=ENCODING) as handle:
     HTML_PAGE = handle.read().replace('AERONAUTICAL_ANNOTATIONS', AERONAUTICAL_ANNOTATIONS)
 
-GEO_JSON_HEADER = {
-    'type': 'FeatureCollection',
-    'name': f'Airport - {ICAO} ({City}, {CC_HINT})',
-    'crs': {
-        'type': 'name',
-        'properties': {
-            'name': 'urn:ogc:def:crs:OGC:1.3:CRS84',
-        },
-    },
-    'features': [],
-}
-GEO_JSON_FEATURE: FeatureDict = {
-    'type': 'Feature',
-    'properties': {
-        'name': f"<a href='{URL}' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
-    },
-    'geometry': {
-        'type': 'Point',
-        'coordinates': [],  # Note: lon, lat
-    },
-}
-
-GEO_JSON_PREFIX_HEADER: PHeaderDict = {
-    'type': 'FeatureCollection',
-    'name': f'Region - {IC_PREFIX} ({CC_HINT})',
-    'crs': {
-        'type': 'name',
-        'properties': {
-            'name': 'urn:ogc:def:crs:OGC:1.3:CRS84',
-        },
-    },
-    'features': [],
-}
-GEO_JSON_PREFIX_FEATURE: PFeatureDict = {
-    'type': 'Feature',
-    'properties': {
-        'name': f"<a href='{URL}' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
-    },
-    'geometry': {
-        'type': 'Point',
-        'coordinates': [],  # Note: lon, lat
-    },
-}
-
 # load data like: {"prefix/00/00C/:": "ANIMAS",}
 with open(pathlib.Path('prefix_airport_names_for_index.json'), 'rt', encoding=ENCODING) as handle:
     airport_path_to_name = json.load(handle)
@@ -143,169 +93,6 @@ def country_page_hack(phrase: str) -> str:
     return phrase.split()[0].lower()
 
 
-def read_stdin() -> Iterator[str]:
-    """A simple stdin line based reader (generator)."""
-    readline = sys.stdin.readline()
-    while readline:
-        yield readline
-        readline = sys.stdin.readline()
-
-
-def read_file(path: str) -> Iterator[str]:
-    """A simple file line based reader (generator)."""
-    with open(path, 'rt', encoding=ENCODING) as r_handle:
-        for line in r_handle:
-            print(line.strip())
-            yield line.strip()
-
-
-def is_runway(label: str) -> bool:
-    """Detect if label is a runway label"""
-    return label.startswith('RW') and len(label) < 7
-
-
-def is_frequency(label: str) -> bool:
-    """Detect if label is a frequency label"""
-    return '_' in label and label.index('_') == 2 and len(label) == 10
-
-
-def maybe_localizer(label: str) -> bool:
-    """Detect if label is maybe a localizer label"""
-    return '_' not in label and len(label) < 7
-
-
-def maybe_glideslope(label: str) -> bool:
-    """Detect if label is maybe a glideslope label"""
-    return '_' in label and len(label) > 5 and any([label.endswith(t) for t in ('DME', 'ILS', 'TAC')])
-
-
-def parse(record: str, seen: Dict[str, bool], data: Dict[str, List[Point]]) -> bool:
-    """Parse the record in a context sensitive manner (seen) into data."""
-
-    def update(aspect: str, new_point: Point) -> bool:
-        """DRY."""
-        if aspect not in data:
-            data[aspect] = []
-        data[aspect].append(new_point)
-        seen[aspect] = True
-        # print(data[aspect][-1])
-        return True
-
-    try:
-        label, lat, lon = record.split(REC_SEP)
-    except ValueError as err:
-        print('DEBUG: <<<', record, '>>>')
-        print(err)
-        return False
-
-    point = Point(label, lat, lon)
-    if not seen[AIRP]:
-        return update(AIRP, point)
-
-    if is_frequency(label):  # ARINC424 source ma provide airports without runways but with frequencies
-        return update(FREQ, point)
-
-    if is_runway(label):
-        return update(RUNW, point)
-
-    if seen[RUNW] and maybe_localizer(label):
-        return update(LOCA, point)
-    if seen[RUNW] and maybe_glideslope(label):
-        return update(GLID, point)
-
-    return False
-
-
-def parse_data(reader: Callable[[], Iterator[str]]) -> Tuple[Dict[str, bool], Dict[str, List[Point]]]:
-    """Parse the R language level data and return the entries and categories seen."""
-    on = False  # The data start is within the file - not at the beginning
-    seen = {k: False for k in (AIRP, RUNW, FREQ, LOCA, GLID)}
-    data: Dict[str, List[Point]] = {}
-    for line in reader():
-        # print('Read:', line, end='')
-        if on:
-            record = line.strip().strip(TRIGGER_END_OF_DATA)
-            found = parse(record, seen, data)
-            if not found:
-                print('WARNING Unhandled ->>>>>>', record)
-        if not on:
-            on = line.startswith(TRIGGER_START_OF_DATA)
-        else:
-            if line.strip().endswith(TRIGGER_END_OF_DATA):
-                break
-    return seen, data
-
-
-def make_feature(feature_data: List[Point], kind: str, cc: str, ric: str) -> List[FeatureDict]:
-    """DRY."""
-    local_features = []
-    for triplet in feature_data:
-        label = triplet.label
-        lat_str = triplet.lat
-        lon_str = triplet.lon
-        feature = copy.deepcopy(GEO_JSON_FEATURE)
-        name = feature['properties']['name']  # type: ignore
-        name = name.replace(ICAO, ric).replace(KIND, kind)
-        name = name.replace(ITEM, label).replace(TEXT, label)
-        name = name.replace(CITY, airport_name[ric])
-        name = name.replace(CC_HINT, cc)
-        name = name.replace(URL, GOOGLE_MAPS_URL.format(lat=float(lat_str), lon=float(lon_str)))
-
-        feature['properties']['name'] = name  # type: ignore
-        feature['geometry']['coordinates'].append(float(lon_str))  # type: ignore
-        feature['geometry']['coordinates'].append(float(lat_str))  # type: ignore
-
-        local_features.append(feature)
-
-    return local_features
-
-
-def make_airport(point: Point, cc: str, ric: str) -> FeatureDict:
-    """DRY."""
-    geojson = copy.deepcopy(GEO_JSON_HEADER)
-    name = geojson['name']
-    name = name.replace(ICAO, ric).replace(City, airport_name[ric].title())  # type: ignore
-    name = name.replace(CC_HINT, cc)  # type: ignore
-    geojson['name'] = name
-
-    airport = copy.deepcopy(GEO_JSON_FEATURE)
-    name = airport['properties']['name']  # type: ignore
-    name = name.replace(ICAO, ric).replace(TEXT, ric).replace(ATTRIBUTION, '')  # type: ignore
-    name = name.replace(CITY, airport_name[ric].title())  # type: ignore
-    name = name.replace(URL, './')  # type: ignore
-    name = name.replace(CC_HINT, cc)  # type: ignore
-    airport['properties']['name'] = name  # type: ignore
-    airport['geometry']['coordinates'].append(float(point.lon))  # type: ignore
-    airport['geometry']['coordinates'].append(float(point.lat))  # type: ignore
-
-    geojson['features'] = [airport]  # type: ignore
-    return geojson
-
-
-def add_prefix(icp: str, cc: str) -> PHeaderDict:
-    """DRY."""
-    geojson = copy.deepcopy(GEO_JSON_PREFIX_HEADER)
-    name = geojson['name']
-    name = name.replace(IC_PREFIX, icp).replace(CC_HINT, cc)  # type: ignore
-    geojson['name'] = name
-    return geojson
-
-
-def add_airport(point: Point, cc: str, ric: str) -> PFeatureDict:
-    """DRY."""
-    airport = copy.deepcopy(GEO_JSON_PREFIX_FEATURE)
-    name = airport['properties']['name']  # type: ignore
-    name = name.replace(ICAO, ric).replace(TEXT, ric).replace(ATTRIBUTION, '')  # type: ignore
-    name = name.replace(CITY, airport_name[ric].title())  # type: ignore
-    name = name.replace(URL, f'{ric}/')  # type: ignore
-    name = name.replace(CC_HINT, cc)  # type: ignore
-    airport['properties']['name'] = name  # type: ignore
-    airport['geometry']['coordinates'].append(float(point.lon))  # type: ignore
-    airport['geometry']['coordinates'].append(float(point.lat))  # type: ignore
-
-    return airport
-
-
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the derivation."""
     argv = sys.argv[1:] if argv is None else argv
@@ -317,13 +104,23 @@ def main(argv: Union[List[str], None] = None) -> int:
     geojson_airports = prefix_store[ic_prefix]  # Let it crash when prefix not known
     geojson_path = DERIVE_GEOJSON_NAME
 
+    ra_count = 0  # region_airports_count
+    cc_count = 1  # HACK A DID ACK TODO: do not fix country count to wun
+    illas = []
     if geojson_airports:
         min_lat, min_lon = 90, 180
         max_lat, max_lon = -90, -180
         coordinates = []
         for airport in geojson_airports["features"]:
+            ra_count += 1
+            # name has eg. "<a href='KLGA/' target='_blank' title='KLGA(La Guardia, New York, USA)'>KLGA</a>"
+            name_mix = airport['properties']['name'].split("title='", 1)[1]
+            # name_mix has eg. "KLGA(La Guardia, New York, USA)'>KLGA</a>"
+            code, rest = name_mix.split('(', 1)
+            name = rest.split(')', 1)[0]
             coords = airport["geometry"]["coordinates"]
             lon, lat = coords[0], coords[1]
+            illas.append((code, str(lat), str(lon), name))
             coordinates.append((lon, lat))
             min_lat = min(min_lat, lat)
             min_lon = min(min_lon, lon)
@@ -344,6 +141,12 @@ def main(argv: Union[List[str], None] = None) -> int:
         with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
             json.dump(geojson_airports, geojson_handle, indent=2)
 
+        data_rows = []
+        for code, lat_str, lon_str, airport_name in sorted(illas):
+            code_link = f'<a href="{code}/">{code}</a>'
+            row = f'<tr><td>{code_link}</td><td>{lat_str}</td><td>{lon_str}</td><td>{airport_name}</td></tr>'
+            data_rows.append(row)
+
         html_dict = {
             ANCHOR: f'prefix/{ic_prefix}/',
             ic_prefix_token: ic_prefix.lower(),
@@ -356,6 +159,9 @@ def main(argv: Union[List[str], None] = None) -> int:
             ZOOM: str(DEFAULT_ZOOM),
             IC_PREFIX: ic_prefix,
             'IrealCAO': ICAO,
+            'REGION_AIRPORT_COUNT_DISPLAY': f'{ra_count} airport{"" if ra_count == 1 else "s"}',
+            'COUNTRY_COUNT_DISPLAY': f'{cc_count} countr{"y" if cc_count == 1 else "ies"}',
+            'DATA_ROWS': '\n'.join(data_rows),
         }
         html_page = HTML_PAGE
         for key, replacement in html_dict.items():
