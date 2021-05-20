@@ -28,7 +28,7 @@ def main(argv: Union[List[str], None] = None) -> int:
 
         gapless_icao_map_path = pathlib.Path('icao_prefix_to_country_name.json')
         with open(gapless_icao_map_path, 'wt', encoding=ENCODING) as out_handle:
-            out_handle.write(flat_prefix)
+            json.dump(flat_prefix, out_handle, indent=2)
 
     return 0
 
