@@ -10,6 +10,7 @@ https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}
 """
 import collections
 import copy
+import datetime as dti
 import functools
 import json
 import os
@@ -22,6 +23,7 @@ PHeaderDict = Dict[str, Collection[str]]
 PFeatureDict = Dict[str, Collection[str]]
 
 ENCODING = 'utf-8'
+THIS_YY_INT = int(dti.datetime.utcnow().strftime("%y"))
 
 COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 PATH_NAV = os.getenv('GEO_PATH_NAV', '')
@@ -142,6 +144,64 @@ prefix_store = {}
 if PREFIX_STORE.exists() and PREFIX_STORE.is_file() and PREFIX_STORE.stat().st_size:
     with open(PREFIX_STORE, 'rt', encoding=ENCODING) as handle:
         prefix_store = json.load(handle)
+
+
+def derive_companion_path(folder: pathlib.Path, icao_identifier:str) -> pathlib.Path:
+    """DRY."""
+    return pathlib.Path(folder, f'airport-{icao_identifier.upper()}.json')
+
+
+def parse_cycle_date(cycle_date_code:str) -> list[int, int]:
+    """Parse string encoded cycle date into full (YYYY, cycle number)- pair."""
+    dt, cy = int(cycle_date_code[:2]), int(cycle_date_code[2:])
+    dt = 1900 + dt if dt > THIS_YY_INT else 2000 + dt
+    return [dt, cy]
+
+
+def parse_int_or_empty(decimals:str) -> Union[int, None]:
+    """Parse string encoded decimal and yield integer or None."""
+    return None if not decimals.strip() else int(decimals.strip())
+
+
+def parse_companion(folder: pathlib.Path, icao_identifier:str) -> dict[str, Union[str, float]]:
+    """Some additional attributes for the airport from database parsing.
+
+    If available will populate the table of the page:
+    <th>Cust.Region</th><th>Prefix</th><th>ICAO</th><th>Latitude</th><th>Longitude</th><th>Elevation</th>
+    <th>Updated</th><th>Rec#</th><th>Airport Name</th>
+
+    and may correct the prefix semantics in the page for prefix to country mapping.
+    """
+    with open(derive_companion_path(folder, icao_identifier), "rt", encoding=ENCODING) as raw_handle:
+        data = json.load(raw_handle)
+    conv = data["airport_converted"]
+    raw = data["airport_raw"]
+    return {
+        "airport_name": raw["airport_name"].strip(),
+        "customer_area_code": raw["customer_area_code"].strip().upper(),  # "USA"
+        "icao_code": raw["icao_code"].strip().upper(),  # "K2"
+        "icao_identifier": raw["icao_identifier"].strip().upper(),  # "04CA"
+        "ifr_capability": raw["ifr_capability"].strip(),  # "N"
+        "longest_runway": raw["longest_runway"].strip(),  # "080"
+        "longest_runway_surface_code": raw["longest_runway_surface_code"].strip(),  # " " -> ''
+        "magnetic_true_indicator": raw["magnetic_true_indicator"].strip(),  # "M"
+        "magnetic_variation": raw["magnetic_variation"].strip(),  # "E0140"
+        "public_military_indicator": raw["public_military_indicator"].strip(),  # "P"
+        "recommended_navaid": raw["recommended_navaid"].strip(),  # "    " -> ''
+        "speed_limit": parse_int_or_empty(raw["speed_limit"]),  # in km/h
+        "speed_limit_altitude": raw["speed_limit_altitude"].strip(),  # in feet for speed limit
+        "time_zone": raw["time_zone"].strip(),  # "U00" or similarly
+        "transition_level": parse_int_or_empty(raw["transition_level"]),  # in feet
+        "transitions_altitude": parse_int_or_empty(raw["transitions_altitude"]),  # in feet
+        "latitude": conv["latitude"],  # signed degrees as float
+        "longitude": conv["longitude"],  # signed degrees as float
+        "elevation": conv["elevation"],  # meters above mean sea level as float
+        "record_type": raw["record_type"].strip().upper(),
+        "section_code": raw["section_code"].strip().upper(),
+        "subsection_code": raw["subsection_code"].strip().upper(),
+        "cycle_date": parse_cycle_date(raw["cycle_date"]),  # Code "1913" -> [2019, 13]
+        "file_record_number": int(raw["file_record_number"].strip()),  # Five digits wrap around counter within db
+    }
 
 
 def country_page_hack(phrase: str) -> str:
@@ -320,9 +380,11 @@ def main(argv: Union[List[str], None] = None) -> int:
     if len(argv) == 2:
         r_path, geojson_path = argv[:2]
         r_file_name = pathlib.Path(r_path).name
+        s_folder = pathlib.Path(str(pathlib.Path(r_path).parent).replace('/r/', '/air_ref/'))  # HACK
     else:
         r_path, geojson_path = STDIN_TOKEN, DERIVE_GEOJSON_NAME
         r_file_name = '#'
+        s_folder = None
 
     if not geojson_path:
         geojson_path = DERIVE_GEOJSON_NAME
@@ -335,7 +397,48 @@ def main(argv: Union[List[str], None] = None) -> int:
         triplet = data[AIRP][0]
         root_icao, root_lat, root_lon = triplet.label.strip(), float(triplet.lat), float(triplet.lon)
         ic_prefix = root_icao[:2]
-        cc_hint = flat_prefix[ic_prefix]
+
+        t_hack = '&nbsp;'
+        data_row = (
+            f'<tr><td>{t_hack}</td><td>{t_hack}</td><td>{t_hack}</td>'
+            f'<td>{t_hack}</td><td>{t_hack}</td><td>{t_hack}</td><td>{t_hack}</td><td>{t_hack}</td>'
+            f'<td>{t_hack}</td></tr>'
+        )
+        facts = {}
+        if s_folder:
+            facts = parse_companion(s_folder, root_icao)
+            s_name = facts["airport_name"]
+            s_area_code = facts["customer_area_code"]
+            s_prefix = facts["icao_code"]
+            s_identifier = facts["icao_identifier"]
+            s_lat = facts["latitude"]
+            s_lon = facts["longitude"]
+            s_elev = facts["elevation"]
+            s_updated = f'{"/".join(str(f) for f in facts["cycle_date"])}'
+            s_rec_num = facts["file_record_number"]
+
+            if s_identifier not in airport_name:
+                airport_name[s_identifier] = s_name
+
+            data_row = (
+                f'<tr><td>{s_area_code}</td><td>{s_prefix}</td><td>{s_identifier}</td>'
+                f'<td>{s_lat}</td><td>{s_lon}</td><td>{s_elev}</td><td>{s_updated}</td><td>{s_rec_num}</td>'
+                f'<td>{s_name}</td></tr>'
+            )
+
+        try:
+            cc_hint = flat_prefix[ic_prefix]
+        except KeyError as err:
+            print("WARNING: Naive prefix matcher failed falling back to raw data:", str(err).replace("\n", "$NL$"))
+            print("DETAILS:", facts)
+            cc_hint = flat_prefix.get(facts.get("icao_code", "ZZ"))
+
+        try:
+            my_prefix_path = prefix_path[root_icao]
+        except KeyError as err:
+            print("WARNING: Naive prefix path matcher failed falling back to derivation:", str(err).replace("\n", "$NL$"))
+            my_prefix_path = f'/prefix/{root_icao[:2]}/{root_icao}/'
+
         markers = cc_hint, root_icao
 
         geojson = make_airport(triplet, *markers)
@@ -373,7 +476,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             json.dump(geojson, geojson_handle, indent=2)
 
         html_dict = {
-            f'{ANCHOR}/{IC_PREFIX_ICAO}': prefix_path[root_icao],
+            f'{ANCHOR}/{IC_PREFIX_ICAO}': my_prefix_path,
             f'{ANCHOR}/{IC_PREFIX}': f'prefix/{ic_prefix}/',
             ICAO: root_icao,
             icao: root_icao.lower(),
@@ -392,6 +495,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             'index.r.txt': r_file_name,
             'index.txt': f'airport-{root_icao}.json',
             IC_PREFIX: ic_prefix,
+            'DATA_ROWS': f'{data_row}\n',
         }
         html_page = HTML_PAGE
         for key, replacement in html_dict.items():
