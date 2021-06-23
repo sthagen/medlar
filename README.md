@@ -1,5 +1,5 @@
 # medlar
-Making sense out of trees.
+Making sense out of weakly defined trees.
 
 # Status
 Experimental.
