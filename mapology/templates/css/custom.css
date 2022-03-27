@@ -1,22 +1,114 @@
-body {
-    margin-left: 1%;
-    font-family: Verdana, serif;
-    padding: 1rem;
+/* libre-franklin-100 - latin */
+@font-face {
+  font-family: 'Libre Franklin';
+  font-style: normal;
+  font-weight: 100;
+  src: local(''),
+       url('./libre-franklin-v11-latin-100.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('./libre-franklin-v11-latin-100.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* libre-franklin-200 - latin */
+@font-face {
+  font-family: 'Libre Franklin';
+  font-style: normal;
+  font-weight: 200;
+  src: local(''),
+       url('./libre-franklin-v11-latin-200.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('./libre-franklin-v11-latin-200.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* libre-franklin-regular - latin */
+@font-face {
+  font-family: 'Libre Franklin';
+  font-style: normal;
+  font-weight: 400;
+  src: local(''),
+       url('./libre-franklin-v11-latin-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('./libre-franklin-v11-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* libre-franklin-600 - latin */
+@font-face {
+  font-family: 'Libre Franklin';
+  font-style: normal;
+  font-weight: 600;
+  src: local(''),
+       url('./libre-franklin-v11-latin-600.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('./libre-franklin-v11-latin-600.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* libre-franklin-100italic - latin */
+@font-face {
+  font-family: 'Libre Franklin';
+  font-style: italic;
+  font-weight: 100;
+  src: local(''),
+       url('./libre-franklin-v11-latin-100italic.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('./libre-franklin-v11-latin-100italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* libre-franklin-200italic - latin */
+@font-face {
+  font-family: 'Libre Franklin';
+  font-style: italic;
+  font-weight: 200;
+  src: local(''),
+       url('./libre-franklin-v11-latin-200italic.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('./libre-franklin-v11-latin-200italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* libre-franklin-italic - latin */
+@font-face {
+  font-family: 'Libre Franklin';
+  font-style: italic;
+  font-weight: 400;
+  src: local(''),
+       url('./libre-franklin-v11-latin-italic.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('./libre-franklin-v11-latin-italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* libre-franklin-600italic - latin */
+@font-face {
+  font-family: 'Libre Franklin';
+  font-style: italic;
+  font-weight: 600;
+  src: local(''),
+       url('./libre-franklin-v11-latin-600italic.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('./libre-franklin-v11-latin-600italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
-#mapid {
+html {
+    font-family: 'Libre Franklin', Verdana, sans-serif;
+}
+
+h1 { font-weight: 200; }
+h1 { font-weight: 100; }
+body {
+    margin-left: 1%;
+    font-family: 'Libre Franklin', Verdana, sans-serif;
+    padding: 1rem;
+    height: 100%;
+}
+
+.leaflet-container {
+    height: 640px;
+    width: 1080px;
+    max-width: 100%;
+    max-height: 100%;
+    font: 12px/1.5 'Libre Franklin', Verdana, sans-serif;
+}
+
+#map {
     width: 98%;
-    height: 600px;
+    height: 640px;
     border: thin dotted;
+}
+
+.alt-pressed #map {
+    width: 98%;
+    height: 640px;
+    border: thin dotted;
+    cursor: crosshair;
 }
 
 .leaflet-tooltip {
     pointer-events: auto;
 }
 
-html {
-    font-family: Verdana, Arial, sans-serif;
-}
 
 a {
     color: #0c2d82;

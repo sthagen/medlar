@@ -270,7 +270,7 @@ def parse(record: str, seen: Dict[str, bool], data: Dict[str, List[Point]]) -> b
     if not seen[AIRP]:
         return update(AIRP, point)
 
-    if is_frequency(label):  # ARINC424 source ma provide airports without runways but with frequencies
+    if is_frequency(label):  # ARINC424 source may provide airports without runways but with frequencies
         return update(FREQ, point)
 
     if is_runway(label):
@@ -304,13 +304,18 @@ def parse_data(reader: Callable[[], Iterator[str]]) -> Tuple[Dict[str, bool], Di
     return seen, data
 
 
-def make_feature(feature_data: List[Point], kind: str, cc: str, ric: str) -> List[FeatureDict]:
+def make_feature(coord_stack: Dict[Tuple[str, str], int], feature_data: List[Point], kind: str, cc: str, ric: str) -> List[FeatureDict]:
     """DRY."""
     local_features = []
     for triplet in feature_data:
         label = triplet.label
         lat_str = triplet.lat
         lon_str = triplet.lon
+        pair = (lat_str, lon_str)
+        if pair in coord_stack:
+            coord_stack[pair] += 2
+        else:
+            coord_stack[pair] = 0
         feature = copy.deepcopy(GEO_JSON_FEATURE)
         name = feature['properties']['name']  # type: ignore
         name = name.replace(ICAO, ric).replace(KIND, kind)
@@ -318,6 +323,9 @@ def make_feature(feature_data: List[Point], kind: str, cc: str, ric: str) -> Lis
         name = name.replace(CITY, airport_name[ric])
         name = name.replace(CC_HINT, cc)
         name = name.replace(URL, GOOGLE_MAPS_URL.format(lat=float(lat_str), lon=float(lon_str)))
+        if coord_stack[pair]:
+            spread = '<br>' * coord_stack[pair]
+            name = f'{spread}{name}'
 
         feature['properties']['name'] = name  # type: ignore
         feature['geometry']['coordinates'].append(float(lon_str))  # type: ignore
@@ -328,7 +336,7 @@ def make_feature(feature_data: List[Point], kind: str, cc: str, ric: str) -> Lis
     return local_features
 
 
-def make_airport(point: Point, cc: str, ric: str) -> FeatureDict:
+def make_airport(coord_stack: Dict[Tuple[str, str], int], point: Point, cc: str, ric: str) -> FeatureDict:
     """DRY."""
     geojson = copy.deepcopy(GEO_JSON_HEADER)
     name = geojson['name']
@@ -342,6 +350,16 @@ def make_airport(point: Point, cc: str, ric: str) -> FeatureDict:
     name = name.replace(CITY, airport_name[ric].title())  # type: ignore
     name = name.replace(URL, './')  # type: ignore
     name = name.replace(CC_HINT, cc)  # type: ignore
+
+    pair = (str(point.lat), str(point.lon))
+    if pair in coord_stack:
+        coord_stack[pair] += 2
+    else:
+        coord_stack[pair] = 0
+    if coord_stack[pair]:
+        spread = '<br>' * coord_stack[pair]
+        name = f'{spread}{name}'
+
     airport['properties']['name'] = name  # type: ignore
     airport['geometry']['coordinates'].append(float(point.lon))  # type: ignore
     airport['geometry']['coordinates'].append(float(point.lat))  # type: ignore
@@ -380,7 +398,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     if len(argv) == 2:
         r_path, geojson_path = argv[:2]
         r_file_name = pathlib.Path(r_path).name
-        s_folder = pathlib.Path(str(pathlib.Path(r_path).parent).replace('/r/', '/air_ref/'))  # HACK
+        s_folder = pathlib.Path(str(pathlib.Path(r_path).parent).replace('/r/', '/json/'))  # HACK
     else:
         r_path, geojson_path = STDIN_TOKEN, DERIVE_GEOJSON_NAME
         r_file_name = '#'
@@ -441,20 +459,21 @@ def main(argv: Union[List[str], None] = None) -> int:
 
         markers = cc_hint, root_icao
 
-        geojson = make_airport(triplet, *markers)
+        coord_stack = {}
+        geojson = make_airport(coord_stack, triplet, *markers)
 
         if RUNW in data:
-            geojson['features'].extend(make_feature(data[RUNW], 'Runway', *markers))  # type: ignore
+            geojson['features'].extend(make_feature(coord_stack, data[RUNW], 'Runway', *markers))  # type: ignore
             runway_count = len(data[RUNW])  # HACK A DID ACK for zoom heuristics
 
         if FREQ in data:
-            geojson['features'].extend(make_feature(data[FREQ], 'Frequency', *markers))  # type: ignore
+            geojson['features'].extend(make_feature(coord_stack, data[FREQ], 'Frequency', *markers))  # type: ignore
 
         if LOCA in data:
-            geojson['features'].extend(make_feature(data[LOCA], 'Localizer', *markers))  # type: ignore
+            geojson['features'].extend(make_feature(coord_stack, data[LOCA], 'Localizer', *markers))  # type: ignore
 
         if GLID in data:
-            geojson['features'].extend(make_feature(data[GLID], 'Glideslope', *markers))  # type: ignore
+            geojson['features'].extend(make_feature(coord_stack, data[GLID], 'Glideslope', *markers))  # type: ignore
 
         # Process prefix store
         if ic_prefix not in prefix_store:
