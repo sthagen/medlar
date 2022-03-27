@@ -53,7 +53,7 @@
     let geo = null
 
     async function load() {
-        let url = 'ensh-geo.json'
+        let url = 'icao_lower-geo.json'
         try {
             geo = await (await fetch(url)).json()
         } catch (e) {

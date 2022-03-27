@@ -414,7 +414,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     if data and AIRP in data:
         triplet = data[AIRP][0]
         root_icao, root_lat, root_lon = triplet.label.strip(), float(triplet.lat), float(triplet.lon)
-        ic_prefix = root_icao[:2]
+        ic_prefix = root_icao[:2]  # TODO(sthagen) wrong in many cases esp. USA
 
         t_hack = '&nbsp;'
         data_row = (
@@ -428,6 +428,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             s_name = facts["airport_name"]
             s_area_code = facts["customer_area_code"]
             s_prefix = facts["icao_code"]
+            ic_prefix = s_prefix  # HACK A DID ACK
             s_identifier = facts["icao_identifier"]
             s_lat = facts["latitude"]
             s_lon = facts["longitude"]
@@ -493,6 +494,12 @@ def main(argv: Union[List[str], None] = None) -> int:
         geo_json_name = pathlib.Path(geojson_path).name
         with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
             json.dump(geojson, geojson_handle, indent=2)
+        print(f'Wrote geojson to {geojson_path}')
+        geojson_path = str(pathlib.Path(map_folder, f'{root_icao.lower()}-geo.json'))
+        geo_json_name = pathlib.Path(geojson_path).name
+        with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
+            json.dump(geojson, geojson_handle, indent=2)
+        print(f'And for output wrote geojson to {geojson_path}')
 
         html_dict = {
             f'{ANCHOR}/{IC_PREFIX_ICAO}': my_prefix_path,
