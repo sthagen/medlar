@@ -113,21 +113,23 @@ def main(argv: Union[List[str], None] = None) -> int:
 
     prefixes = sorted(prefix_table_store.keys())
     num_prefixes = len(prefixes)
-    many = num_prefixes > 100  # hundredfold magic
+    many = num_prefixes > 10  # tenfold magic
     numbers = ('latitude', 'longitude', 'elevation')
     for current, prefix in enumerate(sorted(prefixes), start=1):
         region_name = prefix_table_store[prefix]['name']
         airports = sorted(prefix_table_store[prefix]['airports'], key=operator.itemgetter('icao'))
         html = copy.deepcopy(HTML_PAGE)  # noqa
 
-        message = f'processing {current}/{num_prefixes} {prefix} --> ({region_name}) ...'
-        if not many or not current % 100 or current == num_prefixes:
+        message = f'processing {current :>3d}/{num_prefixes} {prefix} --> ({region_name}) ...'
+        if not many or not current % 10 or current == num_prefixes:
             log.info(message)
 
-        log.info('%s - %s' % (prefix, region_name))
+        if DEBUG:
+            log.debug('%s - %s' % (prefix, region_name))
         for airport in airports:
             row = [str(cell) if key not in numbers else str(round(cell, 3)) for key, cell in airport.items()]
-            log.info('- | %s |' % (' | '.join(row)))
+            if DEBUG:
+                log.info('- | %s |' % (' | '.join(row)))
 
     return 0
 

@@ -528,7 +528,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             s_prefix = facts["icao_code"]
             ic_prefix = s_prefix  # HACK A DID ACK
 
-            message = f'processing {current}/{num_tasks} {ic_prefix}/{root_icao} --> ({s_name}) ...'
+            message = f'processing {current :>5d}/{num_tasks} {ic_prefix}/{root_icao} --> ({s_name}) ...'
             if not many or not current % 100 or current == num_tasks:
                 log.info(message)
 
