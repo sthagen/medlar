@@ -111,6 +111,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     with open(PREFIX_TABLE_STORE, 'rt', encoding=ENCODING) as source:
         prefix_table_store = json.load(source)
 
+    slash = '/'
     prefixes = sorted(prefix_table_store.keys())
     num_prefixes = len(prefixes)
     many = num_prefixes > 10  # tenfold magic
@@ -128,13 +129,16 @@ def main(argv: Union[List[str], None] = None) -> int:
             log.debug('%s - %s' % (prefix, region_name))
         data_rows = []
         for airport in airports:
-            row = [str(cell) if key not in numbers else str(round(cell, 3)) for key, cell in airport.items()]
+            row = [str(cell) if key not in numbers else f'{round(cell, 3) :7.03f}' for key, cell in airport.items()]
+            # monkey patching
+            year, cyc = row[6].split(slash)
+            row[6] = f'{year}/{int(cyc) :02d}'
             if DEBUG:
                 log.info('- | %s |' % (' | '.join(row)))
             data_rows.append(
                 f'<tr><td>{row[0]}</td><td>{row[1]}</td><td>{row[2]}</td>'
-                f'<td>{row[3]}</td><td>{row[4]}</td><td>{row[5]}</td><td>{row[6]}</td><td>{row[7]}</td>'
-                f'<td>{row[8]}</td></tr>'
+                f'<td class="ra">{row[3]}</td><td class="ra">{row[4]}</td><td class="ra">{row[5]}</td><td class="la">{row[6]}</td><td class="ra">{row[7]}</td>'
+                f'<td class="la">{row[8]}</td></tr>'
             )
 
         min_lat, min_lon = 90, 180

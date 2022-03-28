@@ -90,15 +90,20 @@ h1 { font-weight: 400; text-transform: capitalize; margin-left: 1rem;}
 h2 { font-weight: 200; margin-left: 1rem;}
 h3 { font-weight: 100; margin-left: 1rem;}
 p { margin-left: 2rem; }
+table { width: 95%; }
 tr { white-space:nowrap; }
 td, th {
     width: 4rem;
     height: 2rem;
     border: 1px solid #ccc;
     text-align: center;
+    padding-left: 1rem;
+    padding-right: 1rem;
 }
 th { background: lightblue;  border-color: white; }
 td:hover { background-color: #9CDCFE; }
+th.la, td.la { text-align: left; }
+th.ra, td.ra { text-align: right; }
 a { color: #0c2d82; }
 b { font-weight: 600; }
 
@@ -106,7 +111,7 @@ b { font-weight: 600; }
 .leaflet-container {
     height: 640px;
     width: 1080px;
-    max-width: 100%;
+    max-width: 95%;
     max-height: 100%;
     font: 12px/1.5 'Libre Franklin', Verdana, sans-serif;
 }
@@ -115,7 +120,7 @@ b { font-weight: 600; }
 }
 
 #map {
-    width: 98%;
+    width: 95%;
     height: 640px;
     border: thin dotted;
 }
