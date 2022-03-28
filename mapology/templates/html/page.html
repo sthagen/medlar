@@ -4,19 +4,29 @@
     <meta charset="utf-8"/>
     <title>IrealCAO / ICAO (City, CC_HINT) - Airport</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-100.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-600.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-100italic.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-200italic.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-italic.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-600italic.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/navdb/_/leaflet/leaflet.min.css">
     <link rel="stylesheet" href="/navdb/_/leaflet/custom.min.css">
     <script src="/navdb/_/leaflet/leaflet.min.js"></script>
 </head>
 <body>
-<main>
-    <section>
-        <h1>HOME <a href="https://HOST/PATH/" class="no-decor">NavDB</a>
+<header>
+    <p>HOME <a href="https://HOST/PATH/" class="no-decor">NavDB</a>
             - ( <a href="https://HOST/PATH/IrealCAO/" class="no-decor">IrealCAO</a>
             | <a href="https://HOST/PATH/country/cc_page.html" class="no-decor">Cc_page</a> )
             / ( <a href="https://HOST/PATH/ANCHOR/IC_PREFIX" class="no-decor">IC_PREFIX</a>
             / <a href="https://HOST/PATH/ANCHOR/IC_PREFIX_ICAO" class="no-decor">ICAO</a> )
-            (City, CC_HINT) - Airport</h1>
+            (City, CC_HINT) - Airport</p>
+</header>
+<main>
+    <section>
+        <h1>(City, CC_HINT) - Airport</h1>
         <div id="map"></div>
         <h2>Satellite Imagery &amp; More</h2>
         <p>&nbsp;Airport: ICAO <a
@@ -117,16 +127,14 @@
 
         // enable Alt-Click to find coordinate at click position (hand cursor not so precise, but we can zoom)
         const popup = L.popup()
-
         function onMapClick(e) {
             if (e.originalEvent.altKey) {
                 popup
                     .setLatLng(e.latlng)
-                    .setContent("You clicked the map at " + e.latlng.toString())
+                    .setContent("+" + e.latlng.toString())
                     .openOn(the_map)
             }
         }
-
         the_map.on('click', onMapClick)
 
 

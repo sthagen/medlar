@@ -3,6 +3,7 @@
   font-family: 'Libre Franklin';
   font-style: normal;
   font-weight: 100;
+  font-display: swap;
   src: local(''),
        url('./libre-franklin-v11-latin-100.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
        url('./libre-franklin-v11-latin-100.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
@@ -12,6 +13,7 @@
   font-family: 'Libre Franklin';
   font-style: normal;
   font-weight: 200;
+  font-display: swap;
   src: local(''),
        url('./libre-franklin-v11-latin-200.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
        url('./libre-franklin-v11-latin-200.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
@@ -21,6 +23,7 @@
   font-family: 'Libre Franklin';
   font-style: normal;
   font-weight: 400;
+  font-display: swap;
   src: local(''),
        url('./libre-franklin-v11-latin-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
        url('./libre-franklin-v11-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
@@ -30,6 +33,7 @@
   font-family: 'Libre Franklin';
   font-style: normal;
   font-weight: 600;
+  font-display: swap;
   src: local(''),
        url('./libre-franklin-v11-latin-600.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
        url('./libre-franklin-v11-latin-600.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
@@ -39,6 +43,7 @@
   font-family: 'Libre Franklin';
   font-style: italic;
   font-weight: 100;
+  font-display: swap;
   src: local(''),
        url('./libre-franklin-v11-latin-100italic.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
        url('./libre-franklin-v11-latin-100italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
@@ -48,6 +53,7 @@
   font-family: 'Libre Franklin';
   font-style: italic;
   font-weight: 200;
+  font-display: swap;
   src: local(''),
        url('./libre-franklin-v11-latin-200italic.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
        url('./libre-franklin-v11-latin-200italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
@@ -57,6 +63,7 @@
   font-family: 'Libre Franklin';
   font-style: italic;
   font-weight: 400;
+  font-display: swap;
   src: local(''),
        url('./libre-franklin-v11-latin-italic.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
        url('./libre-franklin-v11-latin-italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
@@ -66,17 +73,12 @@
   font-family: 'Libre Franklin';
   font-style: italic;
   font-weight: 600;
+  font-display: swap;
   src: local(''),
        url('./libre-franklin-v11-latin-600italic.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
        url('./libre-franklin-v11-latin-600italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
-html {
-    font-family: 'Libre Franklin', Verdana, sans-serif;
-}
-
-h1 { font-weight: 200; }
-h1 { font-weight: 100; }
 body {
     margin-left: 1%;
     font-family: 'Libre Franklin', Verdana, sans-serif;
@@ -84,6 +86,23 @@ body {
     height: 100%;
 }
 
+h1 { font-weight: 400; text-transform: capitalize; margin-left: 1rem;}
+h2 { font-weight: 200; margin-left: 1rem;}
+h3 { font-weight: 100; margin-left: 1rem;}
+p { margin-left: 2rem; }
+tr { white-space:nowrap; }
+td, th {
+    width: 4rem;
+    height: 2rem;
+    border: 1px solid #ccc;
+    text-align: center;
+}
+th { background: lightblue;  border-color: white; }
+td:hover { background-color: #9CDCFE; }
+a { color: #0c2d82; }
+b { font-weight: 600; }
+
+.no-decor { text-decoration: none; }
 .leaflet-container {
     height: 640px;
     width: 1080px;
@@ -91,70 +110,13 @@ body {
     max-height: 100%;
     font: 12px/1.5 'Libre Franklin', Verdana, sans-serif;
 }
+.leaflet-tooltip {
+    pointer-events: auto;
+}
 
 #map {
     width: 98%;
     height: 640px;
     border: thin dotted;
 }
-
-.alt-pressed #map {
-    width: 98%;
-    height: 640px;
-    border: thin dotted;
-    cursor: crosshair;
-}
-
-.leaflet-tooltip {
-    pointer-events: auto;
-}
-
-
-a {
-    color: #0c2d82;
-}
-
-b {
-    font-weight: 600;
-}
-
-h1, h2 {
-    margin-left: 1rem;
-}
-
-h1 {
-    font-weight: 300;
-    text-transform: capitalize;
-}
-
-h2 {
-    font-weight: 200;
-}
-
-p {
-    margin-left: 2rem;
-}
-
-.no-decor {
-    text-decoration: none;
-}
-
-tr {
-    white-space:nowrap;
-}
-
-td, th {
-    width: 4rem;
-    height: 2rem;
-    border: 1px solid #ccc;
-    text-align: center;
-}
-
-th {
-    background: lightblue;
-    border-color: white;
-}
-
-td:hover {
-  background-color: #9CDCFE;
-}
+.alt-pressed #map { cursor: crosshair; }
