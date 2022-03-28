@@ -401,139 +401,150 @@ def add_airport(point: Point, cc: str, icao: str, apn: str) -> PFeatureDict:
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the derivation."""
     argv = sys.argv[1:] if argv is None else argv
-    if len(argv) == 1:
-        bootstrap = argv[0]
-        slash = '/'
-        booticao = bootstrap.rstrip(slash).rsplit(slash, 1)[1]
-        r_path = f'{bootstrap}/airport-with-runways-{booticao}.r'
+    if len(argv) != 1:
+        print('usage: r_filter.py base/r/IC[/ICAO]')
+        return 2
+
+    slash, magic = '/', '/r/'
+    bootstrap = argv[0].rstrip(slash)  # ensure it does not end with a slash
+    # is now either where/ever/r/CC or where/ever/r/CC/ICAO
+    cc_only = slash not in bootstrap.rsplit(magic, 1)[1]
+    tasks = []
+    if cc_only:
+        for path in pathlib.Path(bootstrap).iterdir():
+            if path.is_dir():
+                tasks.append(str(path))
+    else:
+        tasks.append(bootstrap)
+
+    for task in tasks:
+        booticao = task.rstrip(slash).rsplit(slash, 1)[1]
+        r_path = f'{task}/airport-with-runways-{booticao}.r'
         r_file_name = pathlib.Path(r_path).name
         g_folder = pathlib.Path(str(pathlib.Path(r_path).parent).replace('/r/', '/geojson/'))  # HACK
         s_folder = pathlib.Path(str(pathlib.Path(r_path).parent).replace('/r/', '/json/'))  # HACK
-    else:
-        print('usage: r_filter.py base/r/IC/ICAO')
-        return 2
 
-    reader = functools.partial(read_file, r_path)
-    seen, data = parse_data(reader)  # type: ignore
+        reader = functools.partial(read_file, r_path)
+        seen, data = parse_data(reader)  # type: ignore
 
-    runway_count = 0
-    if data and AIRP in data:
-        triplet = data[AIRP][0]
-        root_icao, root_lat, root_lon = triplet.label.strip(), float(triplet.lat), float(triplet.lon)
-        facts = parse_base_facts(s_folder, root_icao)
-        s_name = facts["airport_name"]
-        s_area_code = facts["customer_area_code"]
-        s_prefix = facts["icao_code"]
-        ic_prefix = s_prefix  # HACK A DID ACK
-        s_identifier = facts["icao_identifier"]
-        s_lat = facts["latitude"]
-        s_lon = facts["longitude"]
-        s_elev = facts["elevation"]
-        s_updated = f'{"/".join(str(f) for f in facts["cycle_date"])}'
-        s_rec_num = facts["file_record_number"]
+        runway_count = 0
+        if data and AIRP in data:
+            triplet = data[AIRP][0]
+            root_icao, root_lat, root_lon = triplet.label.strip(), float(triplet.lat), float(triplet.lon)
+            facts = parse_base_facts(s_folder, root_icao)
+            s_name = facts["airport_name"]
+            s_area_code = facts["customer_area_code"]
+            s_prefix = facts["icao_code"]
+            ic_prefix = s_prefix  # HACK A DID ACK
+            s_identifier = facts["icao_identifier"]
+            s_lat = facts["latitude"]
+            s_lon = facts["longitude"]
+            s_elev = facts["elevation"]
+            s_updated = f'{"/".join(str(f) for f in facts["cycle_date"])}'
+            s_rec_num = facts["file_record_number"]
 
-        geojson_path = derive_geojson_in_path(g_folder, s_identifier)
+            geojson_path = derive_geojson_in_path(g_folder, s_identifier)
 
-        if s_identifier not in airport_name:
-            airport_name[s_identifier] = s_name
+            if s_identifier not in airport_name:
+                airport_name[s_identifier] = s_name
 
-        data_row = (
-            f'<tr><td>{s_area_code}</td><td>{s_prefix}</td><td>{s_identifier}</td>'
-            f'<td>{s_lat}</td><td>{s_lon}</td><td>{s_elev}</td><td>{s_updated}</td><td>{s_rec_num}</td>'
-            f'<td>{s_name}</td></tr>'
-        )
+            data_row = (
+                f'<tr><td>{s_area_code}</td><td>{s_prefix}</td><td>{s_identifier}</td>'
+                f'<td>{s_lat}</td><td>{s_lon}</td><td>{s_elev}</td><td>{s_updated}</td><td>{s_rec_num}</td>'
+                f'<td>{s_name}</td></tr>'
+            )
 
-        try:
-            cc_hint = flat_prefix[ic_prefix]
-        except KeyError as err:
-            print("INFO: Naive prefix matcher failed falling back to raw data:", str(err).replace("\n", "$NL$"))
-            print("DETAILS:", facts)
-            cc_hint = flat_prefix.get(facts.get("icao_code", "ZZ"))
+            try:
+                cc_hint = flat_prefix[ic_prefix]
+            except KeyError as err:
+                print("INFO: Naive prefix matcher failed falling back to raw data:", str(err).replace("\n", "$NL$"))
+                print("DETAILS:", facts)
+                cc_hint = flat_prefix.get(facts.get("icao_code", "ZZ"))
 
-        try:
-            my_prefix_path = prefix_path[root_icao]
-        except KeyError as err:
-            print("INFO: Naive prefix path matcher failed falling back to derivation:", str(err).replace("\n", "$NL$"))
-            my_prefix_path = f'/prefix/{ic_prefix}/{root_icao}/'
+            try:
+                my_prefix_path = prefix_path[root_icao]
+            except KeyError as err:
+                print("INFO: Naive prefix path matcher failed falling back to derivation:", str(err).replace("\n", "$NL$"))
+                my_prefix_path = f'/prefix/{ic_prefix}/{root_icao}/'
 
-        markers = cc_hint, root_icao, s_name
+            markers = cc_hint, root_icao, s_name
 
-        coord_stack = {}
-        geojson = make_airport(coord_stack, triplet, *markers)
+            coord_stack = {}
+            geojson = make_airport(coord_stack, triplet, *markers)
 
-        if RUNW in data:
-            geojson['features'].extend(make_feature(coord_stack, data[RUNW], 'Runway', *markers))  # type: ignore
-            runway_count = len(data[RUNW])  # HACK A DID ACK for zoom heuristics
+            if RUNW in data:
+                geojson['features'].extend(make_feature(coord_stack, data[RUNW], 'Runway', *markers))  # type: ignore
+                runway_count = len(data[RUNW])  # HACK A DID ACK for zoom heuristics
 
-        if FREQ in data:
-            geojson['features'].extend(make_feature(coord_stack, data[FREQ], 'Frequency', *markers))  # type: ignore
+            if FREQ in data:
+                geojson['features'].extend(make_feature(coord_stack, data[FREQ], 'Frequency', *markers))  # type: ignore
 
-        if LOCA in data:
-            geojson['features'].extend(make_feature(coord_stack, data[LOCA], 'Localizer', *markers))  # type: ignore
+            if LOCA in data:
+                geojson['features'].extend(make_feature(coord_stack, data[LOCA], 'Localizer', *markers))  # type: ignore
 
-        if GLID in data:
-            geojson['features'].extend(make_feature(coord_stack, data[GLID], 'Glideslope', *markers))  # type: ignore
+            if GLID in data:
+                geojson['features'].extend(make_feature(coord_stack, data[GLID], 'Glideslope', *markers))  # type: ignore
 
-        # Process prefix store
-        if ic_prefix not in prefix_store:
-            # Create initial entry for ICAO prefix
-            prefix_store[ic_prefix] = add_prefix(ic_prefix, cc_hint)
+            # Process prefix store
+            if ic_prefix not in prefix_store:
+                # Create initial entry for ICAO prefix
+                prefix_store[ic_prefix] = add_prefix(ic_prefix, cc_hint)
 
-        ic_airport_names = set(airp['properties']['name'] for airp in prefix_store[ic_prefix]['features'])
-        ic_airport = add_airport(triplet, *markers)
-        if ic_airport['properties']['name'] not in ic_airport_names:
-            prefix_store[ic_prefix]['features'].append(ic_airport)
+            ic_airport_names = set(airp['properties']['name'] for airp in prefix_store[ic_prefix]['features'])
+            ic_airport = add_airport(triplet, *markers)
+            if ic_airport['properties']['name'] not in ic_airport_names:
+                prefix_store[ic_prefix]['features'].append(ic_airport)
 
-        prefix_root = pathlib.Path(FS_PREFIX_PATH)
-        map_folder = pathlib.Path(prefix_root, ic_prefix, root_icao)
-        map_folder.mkdir(parents=True, exist_ok=True)
-        if geojson_path == DERIVE_GEOJSON_NAME:
+            prefix_root = pathlib.Path(FS_PREFIX_PATH)
+            map_folder = pathlib.Path(prefix_root, ic_prefix, root_icao)
+            map_folder.mkdir(parents=True, exist_ok=True)
+            if geojson_path == DERIVE_GEOJSON_NAME:
+                geojson_path = str(pathlib.Path(map_folder, f'{root_icao.lower()}-geo.json'))
+            geo_json_name = pathlib.Path(geojson_path).name
+            with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
+                json.dump(geojson, geojson_handle, indent=2)
+            print(f'Wrote geojson to {geojson_path}')
             geojson_path = str(pathlib.Path(map_folder, f'{root_icao.lower()}-geo.json'))
-        geo_json_name = pathlib.Path(geojson_path).name
-        with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
-            json.dump(geojson, geojson_handle, indent=2)
-        print(f'Wrote geojson to {geojson_path}')
-        geojson_path = str(pathlib.Path(map_folder, f'{root_icao.lower()}-geo.json'))
-        geo_json_name = pathlib.Path(geojson_path).name
-        with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
-            json.dump(geojson, geojson_handle, indent=2)
-        print(f'And for output wrote geojson to {geojson_path}')
+            geo_json_name = pathlib.Path(geojson_path).name
+            with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
+                json.dump(geojson, geojson_handle, indent=2)
+            print(f'And for output wrote geojson to {geojson_path}')
 
-        html_dict = {
-            f'{ANCHOR}/{IC_PREFIX_ICAO}': my_prefix_path,
-            f'{ANCHOR}/{IC_PREFIX}': f'prefix/{ic_prefix}/',
-            ICAO: root_icao,
-            icao: root_icao.lower(),
-            City: airport_name[root_icao].title(),
-            CITY: airport_name[root_icao],
-            CC_HINT: cc_hint,
-            cc_page: country_page_hack(cc_hint),
-            Cc_page: country_page_hack(cc_hint).title(),
-            LAT_LON: f'{root_lat},{root_lon}',
-            PATH: PATH_NAV,
-            HOST: HOST_NAV,
-            URL: GOOGLE_MAPS_URL.format(lat=root_lat, lon=root_lon),
-            ZOOM: str(max(DEFAULT_ZOOM - runway_count + 1, 9)),
-            'IrealCAO': ICAO,
-            'index.json': geo_json_name,
-            'index.r.txt': r_file_name,
-            'index.txt': f'airport-{root_icao}.json',
-            IC_PREFIX: ic_prefix,
-            'DATA_ROWS': f'{data_row}\n',
-        }
-        html_page = HTML_PAGE
-        for key, replacement in html_dict.items():
-            html_page = html_page.replace(key, replacement)
+            html_dict = {
+                f'{ANCHOR}/{IC_PREFIX_ICAO}': my_prefix_path,
+                f'{ANCHOR}/{IC_PREFIX}': f'prefix/{ic_prefix}/',
+                ICAO: root_icao,
+                icao: root_icao.lower(),
+                City: airport_name[root_icao].title(),
+                CITY: airport_name[root_icao],
+                CC_HINT: cc_hint,
+                cc_page: country_page_hack(cc_hint),
+                Cc_page: country_page_hack(cc_hint).title(),
+                LAT_LON: f'{root_lat},{root_lon}',
+                PATH: PATH_NAV,
+                HOST: HOST_NAV,
+                URL: GOOGLE_MAPS_URL.format(lat=root_lat, lon=root_lon),
+                ZOOM: str(max(DEFAULT_ZOOM - runway_count + 1, 9)),
+                'IrealCAO': ICAO,
+                'index.json': geo_json_name,
+                'index.r.txt': r_file_name,
+                'index.txt': f'airport-{root_icao}.json',
+                IC_PREFIX: ic_prefix,
+                'DATA_ROWS': f'{data_row}\n',
+            }
+            html_page = HTML_PAGE
+            for key, replacement in html_dict.items():
+                html_page = html_page.replace(key, replacement)
 
-        html_path = pathlib.Path(map_folder, 'index.html')
-        with open(html_path, 'wt', encoding=ENCODING) as html_handle:
-            html_handle.write(html_page)
+            html_path = pathlib.Path(map_folder, 'index.html')
+            with open(html_path, 'wt', encoding=ENCODING) as html_handle:
+                html_handle.write(html_page)
 
-        with open(PREFIX_STORE, 'wt', encoding=ENCODING) as geojson_prefix_handle:
-            json.dump(prefix_store, geojson_prefix_handle, indent=2)
+            with open(PREFIX_STORE, 'wt', encoding=ENCODING) as geojson_prefix_handle:
+                json.dump(prefix_store, geojson_prefix_handle, indent=2)
 
-    else:
-        print('WARNING: no airport found in R source.')
+        else:
+            print('WARNING: no airport found in R source.')
 
     return 0
 
