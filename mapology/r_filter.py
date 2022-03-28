@@ -146,9 +146,14 @@ if PREFIX_STORE.exists() and PREFIX_STORE.is_file() and PREFIX_STORE.stat().st_s
         prefix_store = json.load(handle)
 
 
-def derive_companion_path(folder: pathlib.Path, icao_identifier:str) -> pathlib.Path:
+def derive_base_facts_path(folder: pathlib.Path, icao_identifier:str) -> pathlib.Path:
     """DRY."""
     return pathlib.Path(folder, f'airport-{icao_identifier.upper()}.json')
+
+
+def derive_geojson_in_path(folder: pathlib.Path, icao_identifier: str) -> pathlib.Path:
+    """DRY."""
+    return pathlib.Path(folder, f'airport-{icao_identifier.upper()}.geojson')
 
 
 def parse_cycle_date(cycle_date_code:str) -> list[int, int]:
@@ -163,7 +168,7 @@ def parse_int_or_empty(decimals:str) -> Union[int, None]:
     return None if not decimals.strip() else int(decimals.strip())
 
 
-def parse_companion(folder: pathlib.Path, icao_identifier:str) -> dict[str, Union[str, float]]:
+def parse_base_facts(folder: pathlib.Path, icao_identifier: str) -> dict[str, Union[str, float]]:
     """Some additional attributes for the airport from database parsing.
 
     If available will populate the table of the page:
@@ -172,7 +177,7 @@ def parse_companion(folder: pathlib.Path, icao_identifier:str) -> dict[str, Unio
 
     and may correct the prefix semantics in the page for prefix to country mapping.
     """
-    with open(derive_companion_path(folder, icao_identifier), "rt", encoding=ENCODING) as raw_handle:
+    with open(derive_base_facts_path(folder, icao_identifier), "rt", encoding=ENCODING) as raw_handle:
         data = json.load(raw_handle)
     conv = data["airport_converted"]
     raw = data["airport_raw"]
@@ -395,55 +400,47 @@ def add_airport(point: Point, cc: str, ric: str) -> PFeatureDict:
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the derivation."""
     argv = sys.argv[1:] if argv is None else argv
-    if len(argv) == 2:
-        r_path, geojson_path = argv[:2]
+    if len(argv) == 1:
+        bootstrap = argv[0]
+        slash = '/'
+        booticao = bootstrap.rstrip(slash).rsplit(slash, 1)[1]
+        r_path = f'{bootstrap}/airport-with-runways-{booticao}.r'
         r_file_name = pathlib.Path(r_path).name
+        g_folder = pathlib.Path(str(pathlib.Path(r_path).parent).replace('/r/', '/geojson/'))  # HACK
         s_folder = pathlib.Path(str(pathlib.Path(r_path).parent).replace('/r/', '/json/'))  # HACK
     else:
-        r_path, geojson_path = STDIN_TOKEN, DERIVE_GEOJSON_NAME
-        r_file_name = '#'
-        s_folder = None
+        print('usage: r_filter.py base/r/IC/ICAO')
+        return 2
 
-    if not geojson_path:
-        geojson_path = DERIVE_GEOJSON_NAME
-
-    reader = read_stdin if r_path == STDIN_TOKEN else functools.partial(read_file, r_path)
+    reader = functools.partial(read_file, r_path)
     seen, data = parse_data(reader)  # type: ignore
 
     runway_count = 0
     if data and AIRP in data:
         triplet = data[AIRP][0]
         root_icao, root_lat, root_lon = triplet.label.strip(), float(triplet.lat), float(triplet.lon)
-        ic_prefix = root_icao[:2]  # TODO(sthagen) wrong in many cases esp. USA
+        facts = parse_base_facts(s_folder, root_icao)
+        s_name = facts["airport_name"]
+        s_area_code = facts["customer_area_code"]
+        s_prefix = facts["icao_code"]
+        ic_prefix = s_prefix  # HACK A DID ACK
+        s_identifier = facts["icao_identifier"]
+        s_lat = facts["latitude"]
+        s_lon = facts["longitude"]
+        s_elev = facts["elevation"]
+        s_updated = f'{"/".join(str(f) for f in facts["cycle_date"])}'
+        s_rec_num = facts["file_record_number"]
 
-        t_hack = '&nbsp;'
+        geojson_path = derive_geojson_in_path(g_folder, s_identifier)
+
+        if s_identifier not in airport_name:
+            airport_name[s_identifier] = s_name
+
         data_row = (
-            f'<tr><td>{t_hack}</td><td>{t_hack}</td><td>{t_hack}</td>'
-            f'<td>{t_hack}</td><td>{t_hack}</td><td>{t_hack}</td><td>{t_hack}</td><td>{t_hack}</td>'
-            f'<td>{t_hack}</td></tr>'
+            f'<tr><td>{s_area_code}</td><td>{s_prefix}</td><td>{s_identifier}</td>'
+            f'<td>{s_lat}</td><td>{s_lon}</td><td>{s_elev}</td><td>{s_updated}</td><td>{s_rec_num}</td>'
+            f'<td>{s_name}</td></tr>'
         )
-        facts = {}
-        if s_folder:
-            facts = parse_companion(s_folder, root_icao)
-            s_name = facts["airport_name"]
-            s_area_code = facts["customer_area_code"]
-            s_prefix = facts["icao_code"]
-            ic_prefix = s_prefix  # HACK A DID ACK
-            s_identifier = facts["icao_identifier"]
-            s_lat = facts["latitude"]
-            s_lon = facts["longitude"]
-            s_elev = facts["elevation"]
-            s_updated = f'{"/".join(str(f) for f in facts["cycle_date"])}'
-            s_rec_num = facts["file_record_number"]
-
-            if s_identifier not in airport_name:
-                airport_name[s_identifier] = s_name
-
-            data_row = (
-                f'<tr><td>{s_area_code}</td><td>{s_prefix}</td><td>{s_identifier}</td>'
-                f'<td>{s_lat}</td><td>{s_lon}</td><td>{s_elev}</td><td>{s_updated}</td><td>{s_rec_num}</td>'
-                f'<td>{s_name}</td></tr>'
-            )
 
         try:
             cc_hint = flat_prefix[ic_prefix]
