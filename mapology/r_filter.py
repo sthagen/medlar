@@ -13,10 +13,11 @@ import copy
 import datetime as dti
 import functools
 import json
+import logging
 import os
 import pathlib
 import sys
-from typing import Callable, Collection, Dict, Iterator, List, Tuple, Union
+from typing import Callable, Collection, Dict, Iterator, List, Tuple, Union, no_type_check
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
@@ -66,6 +67,33 @@ cc_page = 'cc_page'
 Cc_page = 'Cc_page'
 DEFAULT_OUT_PREFIX = 'prefix'
 
+APP_ALIAS = 'mapology'
+APP_ENV = APP_ALIAS.upper()
+DEBUG = bool(os.getenv(f'{APP_ENV}_DEBUG', ''))
+log = logging.getLogger()  # Temporary refactoring: module level logger
+LOG_FOLDER = pathlib.Path('logs')
+LOG_FILE = f'{APP_ALIAS}.log'
+LOG_PATH = pathlib.Path(LOG_FOLDER, LOG_FILE) if LOG_FOLDER.is_dir() else pathlib.Path(LOG_FILE)
+LOG_LEVEL = logging.INFO
+
+
+@no_type_check
+def init_logger(name=None, level=None):
+    """Initialize module level logger"""
+    global log  # pylint: disable=global-statement
+
+    log_format = {
+        'format': '%(asctime)s.%(msecs)03d %(levelname)s [%(name)s]: %(message)s',
+        'datefmt': '%Y-%m-%dT%H:%M:%S',
+        # 'filename': LOG_PATH,
+        'level': LOG_LEVEL if level is None else level,
+    }
+    logging.basicConfig(**log_format)
+    log = logging.getLogger(APP_ENV if name is None else name)
+    log.propagate = True
+
+
+init_logger(name=APP_ENV, level=logging.DEBUG if DEBUG else None)
 ATTRIBUTION = f'{KIND} {ITEM} of '
 
 PREFIX_STORE = pathlib.Path('prefix-store.json')
@@ -229,7 +257,8 @@ def read_file(path: str) -> Iterator[str]:
     """A simple file line based reader (generator)."""
     with open(path, 'rt', encoding=ENCODING) as r_handle:
         for line in r_handle:
-            print(line.strip())
+            if DEBUG:
+                log.debug(line.strip())
             yield line.strip()
 
 
@@ -262,14 +291,14 @@ def parse(record: str, seen: Dict[str, bool], data: Dict[str, List[Point]]) -> b
             data[aspect] = []
         data[aspect].append(new_point)
         seen[aspect] = True
-        # print(data[aspect][-1])
+        # log.debbug(data[aspect][-1])
         return True
 
     try:
         label, lat, lon = record.split(REC_SEP)
     except ValueError as err:
-        print('DEBUG: <<<', record, '>>>')
-        print(err)
+        log.warning('<<<%s>>>' % record)
+        log.error(err)
         return False
 
     point = Point(label, lat, lon)
@@ -296,12 +325,12 @@ def parse_data(reader: Callable[[], Iterator[str]]) -> Tuple[Dict[str, bool], Di
     seen = {k: False for k in (AIRP, RUNW, FREQ, LOCA, GLID)}
     data: Dict[str, List[Point]] = {}
     for line in reader():
-        # print('Read:', line, end='')
+        # log.debug('Read: %s' % line.strip())
         if on:
             record = line.strip().strip(TRIGGER_END_OF_DATA)
             found = parse(record, seen, data)
             if not found:
-                print('WARNING Unhandled ->>>>>>', record)
+                log.warning('Unhandled ->>>>>>%s' % record)
         if not on:
             on = line.startswith(TRIGGER_START_OF_DATA)
         else:
@@ -407,17 +436,26 @@ def main(argv: Union[List[str], None] = None) -> int:
 
     slash, magic = '/', '/r/'
     bootstrap = argv[0].rstrip(slash)  # ensure it does not end with a slash
-    # is now either where/ever/r/CC or where/ever/r/CC/ICAO
-    cc_only = slash not in bootstrap.rsplit(magic, 1)[1]
+    # is now either where/ever/r or where/ever/r/CC or where/ever/r/CC/ICAO
+    full = bootstrap.endswith(magic.rstrip(slash))
+    cc_only = not full and slash not in bootstrap.rsplit(magic, 1)[1]
     tasks = []
-    if cc_only:
+    if full:
+        for path in pathlib.Path(bootstrap).iterdir():
+            if path.is_dir():
+                for sub_path in path.iterdir():
+                    if sub_path.is_dir():
+                        tasks.append(str(sub_path))
+    elif cc_only:
         for path in pathlib.Path(bootstrap).iterdir():
             if path.is_dir():
                 tasks.append(str(path))
     else:
         tasks.append(bootstrap)
 
-    for task in tasks:
+    num_tasks = len(tasks)
+    many = num_tasks > 4200  # hundredfold magic
+    for current, task in enumerate(sorted(tasks), start=1):
         booticao = task.rstrip(slash).rsplit(slash, 1)[1]
         r_path = f'{task}/airport-with-runways-{booticao}.r'
         r_file_name = pathlib.Path(r_path).name
@@ -436,13 +474,17 @@ def main(argv: Union[List[str], None] = None) -> int:
             s_area_code = facts["customer_area_code"]
             s_prefix = facts["icao_code"]
             ic_prefix = s_prefix  # HACK A DID ACK
+
+            message = f'processing {current}/{num_tasks} {ic_prefix}/{root_icao} --> ({s_name}) ...'
+            if not many or not current % 100 or current == num_tasks:
+                log.info(message)
+
             s_identifier = facts["icao_identifier"]
             s_lat = facts["latitude"]
             s_lon = facts["longitude"]
             s_elev = facts["elevation"]
             s_updated = f'{"/".join(str(f) for f in facts["cycle_date"])}'
             s_rec_num = facts["file_record_number"]
-
             geojson_path = derive_geojson_in_path(g_folder, s_identifier)
 
             if s_identifier not in airport_name:
@@ -457,14 +499,14 @@ def main(argv: Union[List[str], None] = None) -> int:
             try:
                 cc_hint = flat_prefix[ic_prefix]
             except KeyError as err:
-                print("INFO: Naive prefix matcher failed falling back to raw data:", str(err).replace("\n", "$NL$"))
-                print("DETAILS:", facts)
+                log.debug("Naive prefix matcher failed falling back to raw data: %s" % str(err).replace("\n", "$NL$"))
+                log.debug("DETAILS: %s" % str(facts))
                 cc_hint = flat_prefix.get(facts.get("icao_code", "ZZ"))
 
             try:
                 my_prefix_path = prefix_path[root_icao]
             except KeyError as err:
-                print("INFO: Naive prefix path matcher failed falling back to derivation:", str(err).replace("\n", "$NL$"))
+                log.debug("Naive prefix path matcher failed falling back to derivation: %s" % str(err).replace("\n", "$NL$"))
                 my_prefix_path = f'/prefix/{ic_prefix}/{root_icao}/'
 
             markers = cc_hint, root_icao, s_name
@@ -503,12 +545,12 @@ def main(argv: Union[List[str], None] = None) -> int:
             geo_json_name = pathlib.Path(geojson_path).name
             with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
                 json.dump(geojson, geojson_handle, indent=2)
-            print(f'Wrote geojson to {geojson_path}')
+            log.debug('Wrote geojson to %s' % str(geojson_path))
             geojson_path = str(pathlib.Path(map_folder, f'{root_icao.lower()}-geo.json'))
             geo_json_name = pathlib.Path(geojson_path).name
             with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
                 json.dump(geojson, geojson_handle, indent=2)
-            print(f'And for output wrote geojson to {geojson_path}')
+            log.debug('Wrote geojson to %s' % str(geojson_path))
 
             html_dict = {
                 f'{ANCHOR}/{IC_PREFIX_ICAO}': my_prefix_path,
@@ -544,7 +586,7 @@ def main(argv: Union[List[str], None] = None) -> int:
                 json.dump(prefix_store, geojson_prefix_handle, indent=2)
 
         else:
-            print('WARNING: no airport found in R source.')
+            log.warning('no airport found with R sources.')
 
     return 0
 
