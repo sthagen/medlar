@@ -97,6 +97,7 @@ init_logger(name=APP_ENV, level=logging.DEBUG if DEBUG else None)
 ATTRIBUTION = f'{KIND} {ITEM} of '
 
 PREFIX_STORE = pathlib.Path('prefix-store.json')
+PREFIX_TABLE_STORE = pathlib.Path('prefix-table-store.json')
 
 Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 
@@ -151,6 +152,30 @@ GEO_JSON_PREFIX_FEATURE: PFeatureDict = {
     },
 }
 
+JSON_PREFIX_TABLE_HEADER = {
+    'type': 'x-prefix-table',
+    'name': f'Region - {IC_PREFIX} ({CC_HINT})',
+    'crs': {
+        'type': 'name',
+        'properties': {
+            'name': 'urn:ogc:def:crs:OGC:1.3:CRS84',
+        },
+    },
+    'airports': [],
+}
+
+JSON_PREFIX_TABLE_ROW = {
+    'area_code': '',
+    'prefix': '',
+    'icao': '',
+    'latitude': '',
+    'longitude': '',
+    'elevation': '',
+    'updated': '',
+    'record_number': '',
+    'airport_name': '',
+}
+
 # load data like: {"prefix/00/00C/:": "ANIMAS",}
 with open(pathlib.Path('prefix_airport_names_for_index.json'), 'rt', encoding=ENCODING) as handle:
     airport_path_to_name = json.load(handle)
@@ -173,6 +198,11 @@ prefix_store = {}
 if PREFIX_STORE.exists() and PREFIX_STORE.is_file() and PREFIX_STORE.stat().st_size:
     with open(PREFIX_STORE, 'rt', encoding=ENCODING) as handle:
         prefix_store = json.load(handle)
+
+prefix_table_store = {}
+if PREFIX_TABLE_STORE.exists() and PREFIX_TABLE_STORE.is_file() and PREFIX_TABLE_STORE.stat().st_size:
+    with open(PREFIX_TABLE_STORE, 'rt', encoding=ENCODING) as handle:
+        prefix_table_store = json.load(handle)
 
 
 def derive_base_facts_path(folder: pathlib.Path, icao_identifier:str) -> pathlib.Path:
@@ -412,6 +442,29 @@ def add_prefix(icp: str, cc: str) -> PHeaderDict:
     return geojson
 
 
+def add_table_prefix(icp: str, cc: str) -> PHeaderDict:
+    """DRY."""
+    table = copy.deepcopy(JSON_PREFIX_TABLE_HEADER)
+    name = table['name']
+    name = name.replace(IC_PREFIX, icp).replace(CC_HINT, cc)  # type: ignore
+    table['name'] = name
+    return table
+
+
+def make_table_row(facts):
+    row = copy.deepcopy(JSON_PREFIX_TABLE_ROW)
+    row['area_code'] = facts['customer_area_code']
+    row['prefix'] = facts['icao_code']
+    row['icao'] = facts["icao_identifier"]
+    row['latitude'] = facts['latitude']
+    row['longitude'] = facts['longitude']
+    row['elevation'] = facts['elevation']
+    row['updated'] = f'{"/".join(str(f) for f in facts["cycle_date"])}'
+    row['record_number'] = facts['file_record_number']
+    row['airport_name'] = facts['airport_name']
+    return row
+
+
 def add_airport(point: Point, cc: str, icao: str, apn: str) -> PFeatureDict:
     """DRY."""
     airport = copy.deepcopy(GEO_JSON_PREFIX_FEATURE)
@@ -532,10 +585,16 @@ def main(argv: Union[List[str], None] = None) -> int:
                 # Create initial entry for ICAO prefix
                 prefix_store[ic_prefix] = add_prefix(ic_prefix, cc_hint)
 
+            # Process prefix table store
+            if ic_prefix not in prefix_table_store:
+                # Create initial entry for ICAO prefix
+                prefix_table_store[ic_prefix] = add_table_prefix(ic_prefix, cc_hint)
+
             ic_airport_names = set(airp['properties']['name'] for airp in prefix_store[ic_prefix]['features'])
             ic_airport = add_airport(triplet, *markers)
             if ic_airport['properties']['name'] not in ic_airport_names:
                 prefix_store[ic_prefix]['features'].append(ic_airport)
+                prefix_table_store[ic_prefix]['airports'].append(make_table_row(facts))
 
             prefix_root = pathlib.Path(FS_PREFIX_PATH)
             map_folder = pathlib.Path(prefix_root, ic_prefix, root_icao)
@@ -581,6 +640,9 @@ def main(argv: Union[List[str], None] = None) -> int:
             html_path = pathlib.Path(map_folder, 'index.html')
             with open(html_path, 'wt', encoding=ENCODING) as html_handle:
                 html_handle.write(html_page)
+
+            with open(PREFIX_TABLE_STORE, 'wt', encoding=ENCODING) as json_prefix_table_handle:
+                json.dump(prefix_table_store, json_prefix_table_handle, indent=2)
 
             with open(PREFIX_STORE, 'wt', encoding=ENCODING) as geojson_prefix_handle:
                 json.dump(prefix_store, geojson_prefix_handle, indent=2)
