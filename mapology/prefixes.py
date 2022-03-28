@@ -40,7 +40,7 @@ ANCHOR = 'ANCHOR'
 TEXT = 'TEXT'
 URL = 'URL'
 ZOOM = 'ZOOM'
-DEFAULT_ZOOM = 16
+DEFAULT_ZOOM = 4
 
 icao = 'icao_lower'
 LAT_LON = 'LAT_LON'
@@ -117,8 +117,8 @@ def main(argv: Union[List[str], None] = None) -> int:
     numbers = ('latitude', 'longitude', 'elevation')
     for current, prefix in enumerate(sorted(prefixes), start=1):
         region_name = prefix_table_store[prefix]['name']
+        my_prefix_path = f'{DEFAULT_OUT_PREFIX}/{prefix}'
         airports = sorted(prefix_table_store[prefix]['airports'], key=operator.itemgetter('icao'))
-        html = copy.deepcopy(HTML_PAGE)  # noqa
 
         message = f'processing {current :>3d}/{num_prefixes} {prefix} --> ({region_name}) ...'
         if not many or not current % 10 or current == num_prefixes:
@@ -126,10 +126,71 @@ def main(argv: Union[List[str], None] = None) -> int:
 
         if DEBUG:
             log.debug('%s - %s' % (prefix, region_name))
+        data_rows = []
         for airport in airports:
             row = [str(cell) if key not in numbers else str(round(cell, 3)) for key, cell in airport.items()]
             if DEBUG:
                 log.info('- | %s |' % (' | '.join(row)))
+            data_rows.append(
+                f'<tr><td>{row[0]}</td><td>{row[1]}</td><td>{row[2]}</td>'
+                f'<td>{row[3]}</td><td>{row[4]}</td><td>{row[5]}</td><td>{row[6]}</td><td>{row[7]}</td>'
+                f'<td>{row[8]}</td></tr>'
+            )
+
+        min_lat, min_lon = 90, 180
+        max_lat, max_lon = -90, -180
+        ra_count = 0  # region_airports_count
+        cc_count = 1  # HACK A DID ACK TODO: do not fix country count to wun
+        for airport in airports:
+            ra_count += 1
+            # name has eg. "<a href='KLGA/' target='_blank' title='KLGA(La Guardia, New York, USA)'>KLGA</a>"
+            # name_mix = airport['name']
+            # name_mix has eg. "KLGA(La Guardia, New York, USA)'>KLGA</a>" LATER TODO
+            # code, rest = name_mix.split('(', 1)
+            # name = rest.split(')', 1)[0]
+            # coords = airport["geometry"]["coordinates"]
+            lon, lat = airport['longitude'], airport['latitude']
+            min_lat = min(min_lat, lat)
+            min_lon = min(min_lon, lon)
+            max_lat = max(max_lat, lat)
+            max_lon = max(max_lon, lon)
+
+        prefix_lat = 0.5 * (max_lat + min_lat)
+        prefix_lon = 0.5 * (max_lon + min_lon)
+        bbox_disp = f"[({min_lat}, {min_lon}), ({max_lat}, {max_lon})]"
+        log.debug("Identified bounding box lat, lon in %s for prefix %s" % (bbox_disp, prefix))
+        log.debug((f"Set center of prefix map to lat, lon = (%f, %f) for prefix %s" % (prefix_lat, prefix_lon, prefix)))
+        prefix_root = pathlib.Path(FS_PREFIX_PATH)
+        map_folder = pathlib.Path(prefix_root, prefix)
+        map_folder.mkdir(parents=True, exist_ok=True)
+        geojson_path = str(pathlib.Path(map_folder, f'{prefix.lower()}-geo.json'))
+        with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
+            json.dump(prefix_store[prefix], geojson_handle, indent=2)
+
+        html_dict = {
+            f'{ANCHOR}/{IC_PREFIX_ICAO}': my_prefix_path,
+            f'{ANCHOR}/{IC_PREFIX}': f'prefix/{prefix}/',
+            CC_HINT: region_name,
+            cc_page: region_name.split()[0].lower(),
+            Cc_page: region_name.split()[0].title(),
+            LAT_LON: f'{prefix_lat},{prefix_lon}',
+            PATH: PATH_NAV,
+            HOST: HOST_NAV,
+            ZOOM: str(DEFAULT_ZOOM),
+            IC_PREFIX: prefix,
+            'IrealCAO': ICAO,
+            'ic_prefix_lower-geo.json': f'{prefix.lower()}-geo.json',
+            'REGION_AIRPORT_COUNT_DISPLAY': f'{ra_count} airport{"" if ra_count == 1 else "s"}',
+            'COUNTRY_COUNT_DISPLAY': f'{cc_count} region{"" if cc_count == 1 else "s"}',
+            'DATA_ROWS': '\n'.join(data_rows) + '\n',
+        }
+        html_page = HTML_PAGE
+        for key, replacement in html_dict.items():
+            html_page = html_page.replace(key, replacement)
+
+        html_path = pathlib.Path(my_prefix_path, 'index.html')
+        with open(html_path, 'wt', encoding=ENCODING) as html_handle:
+            html_handle.write(html_page)
 
     return 0
 
