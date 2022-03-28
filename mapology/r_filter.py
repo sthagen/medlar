@@ -64,6 +64,7 @@ icao = 'icao_lower'
 LAT_LON = 'LAT_LON'
 cc_page = 'cc_page'
 Cc_page = 'Cc_page'
+DEFAULT_OUT_PREFIX = 'prefix'
 
 ATTRIBUTION = f'{KIND} {ITEM} of '
 
@@ -309,7 +310,7 @@ def parse_data(reader: Callable[[], Iterator[str]]) -> Tuple[Dict[str, bool], Di
     return seen, data
 
 
-def make_feature(coord_stack: Dict[Tuple[str, str], int], feature_data: List[Point], kind: str, cc: str, ric: str) -> List[FeatureDict]:
+def make_feature(coord_stack: Dict[Tuple[str, str], int], feature_data: List[Point], kind: str, cc: str, icao: str, apn: str) -> List[FeatureDict]:
     """DRY."""
     local_features = []
     for triplet in feature_data:
@@ -323,9 +324,9 @@ def make_feature(coord_stack: Dict[Tuple[str, str], int], feature_data: List[Poi
             coord_stack[pair] = 0
         feature = copy.deepcopy(GEO_JSON_FEATURE)
         name = feature['properties']['name']  # type: ignore
-        name = name.replace(ICAO, ric).replace(KIND, kind)
+        name = name.replace(ICAO, icao).replace(KIND, kind)
         name = name.replace(ITEM, label).replace(TEXT, label)
-        name = name.replace(CITY, airport_name[ric])
+        name = name.replace(CITY, apn)
         name = name.replace(CC_HINT, cc)
         name = name.replace(URL, GOOGLE_MAPS_URL.format(lat=float(lat_str), lon=float(lon_str)))
         if coord_stack[pair]:
@@ -341,18 +342,18 @@ def make_feature(coord_stack: Dict[Tuple[str, str], int], feature_data: List[Poi
     return local_features
 
 
-def make_airport(coord_stack: Dict[Tuple[str, str], int], point: Point, cc: str, ric: str) -> FeatureDict:
+def make_airport(coord_stack: Dict[Tuple[str, str], int], point: Point, cc: str, icao: str, apn: str) -> FeatureDict:
     """DRY."""
     geojson = copy.deepcopy(GEO_JSON_HEADER)
     name = geojson['name']
-    name = name.replace(ICAO, ric).replace(City, airport_name[ric].title())  # type: ignore
+    name = name.replace(ICAO, icao).replace(City, apn.title())  # type: ignore
     name = name.replace(CC_HINT, cc)  # type: ignore
     geojson['name'] = name
 
     airport = copy.deepcopy(GEO_JSON_FEATURE)
     name = airport['properties']['name']  # type: ignore
-    name = name.replace(ICAO, ric).replace(TEXT, ric).replace(ATTRIBUTION, '')  # type: ignore
-    name = name.replace(CITY, airport_name[ric].title())  # type: ignore
+    name = name.replace(ICAO, icao).replace(TEXT, icao).replace(ATTRIBUTION, '')  # type: ignore
+    name = name.replace(CITY, apn.title())  # type: ignore
     name = name.replace(URL, './')  # type: ignore
     name = name.replace(CC_HINT, cc)  # type: ignore
 
@@ -382,13 +383,13 @@ def add_prefix(icp: str, cc: str) -> PHeaderDict:
     return geojson
 
 
-def add_airport(point: Point, cc: str, ric: str) -> PFeatureDict:
+def add_airport(point: Point, cc: str, icao: str, apn: str) -> PFeatureDict:
     """DRY."""
     airport = copy.deepcopy(GEO_JSON_PREFIX_FEATURE)
     name = airport['properties']['name']  # type: ignore
-    name = name.replace(ICAO, ric).replace(TEXT, ric).replace(ATTRIBUTION, '')  # type: ignore
-    name = name.replace(CITY, airport_name[ric].title())  # type: ignore
-    name = name.replace(URL, f'{ric}/')  # type: ignore
+    name = name.replace(ICAO, icao).replace(TEXT, icao).replace(ATTRIBUTION, '')  # type: ignore
+    name = name.replace(CITY, apn.title())  # type: ignore
+    name = name.replace(URL, f'{icao}/')  # type: ignore
     name = name.replace(CC_HINT, cc)  # type: ignore
     airport['properties']['name'] = name  # type: ignore
     airport['geometry']['coordinates'].append(float(point.lon))  # type: ignore
@@ -445,17 +446,17 @@ def main(argv: Union[List[str], None] = None) -> int:
         try:
             cc_hint = flat_prefix[ic_prefix]
         except KeyError as err:
-            print("WARNING: Naive prefix matcher failed falling back to raw data:", str(err).replace("\n", "$NL$"))
+            print("INFO: Naive prefix matcher failed falling back to raw data:", str(err).replace("\n", "$NL$"))
             print("DETAILS:", facts)
             cc_hint = flat_prefix.get(facts.get("icao_code", "ZZ"))
 
         try:
             my_prefix_path = prefix_path[root_icao]
         except KeyError as err:
-            print("WARNING: Naive prefix path matcher failed falling back to derivation:", str(err).replace("\n", "$NL$"))
-            my_prefix_path = f'/prefix/{root_icao[:2]}/{root_icao}/'
+            print("INFO: Naive prefix path matcher failed falling back to derivation:", str(err).replace("\n", "$NL$"))
+            my_prefix_path = f'/prefix/{ic_prefix}/{root_icao}/'
 
-        markers = cc_hint, root_icao
+        markers = cc_hint, root_icao, s_name
 
         coord_stack = {}
         geojson = make_airport(coord_stack, triplet, *markers)
