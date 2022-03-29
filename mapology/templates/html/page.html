@@ -111,7 +111,7 @@
             pointLayer.eachLayer(function (marker) {
                 const tooltip = marker.getTooltip()
                 marker.unbindTooltip()
-                if (tooltip._content !== 'null') {
+                if (tooltip && tooltip._content !== 'null') {
                     console.log(tooltip._content)
                     tooltip.options.permanent = true
                     marker.bindTooltip(tooltip)
@@ -122,7 +122,9 @@
             pointLayer.eachLayer(function (marker) {
                 const tooltip = marker.getTooltip()
                 marker.unbindTooltip()
-                tooltip.options.permanent = false
+                if (tooltip) {
+                    tooltip.options.permanent = false
+                }
                 marker.bindTooltip(tooltip)
             })
         })
