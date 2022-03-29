@@ -1,6 +1,8 @@
 """Render the prefix page apps from the prefix abd prefix table stores."""
 import collections
+import copy
 import datetime as dti
+import functools
 import json
 import logging
 import operator
@@ -75,10 +77,58 @@ def init_logger(name=None, level=None):
 
 init_logger(name=APP_ENV, level=logging.DEBUG if DEBUG else None)
 
+
+def convex_hull(coords):
+    """Executes scan to return points in counter-clockwise order that are on the convex hull (Graham)."""
+    turn_left, turn_right, turn_none = 1, -1, 0
+
+    def compare(a, b):
+        return float(a > b) - float(a < b)
+
+    def turn(p, q, r):
+        return compare((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)
+
+    def keep_left(hull, r):
+        while len(hull) > 1 and turn(hull[-2], hull[-1], r) != turn_left:
+            hull.pop()
+        if not len(hull) or hull[-1] != r:
+            hull.append(r)
+        return hull
+
+    points = sorted(coords)
+    lower_hull = functools.reduce(keep_left, points, [])
+    upper_hull = functools.reduce(keep_left, reversed(points), [])
+    return lower_hull.extend(upper_hull[i] for i in range(1, len(upper_hull) - 1)) or lower_hull
+
+
 ATTRIBUTION = f'{KIND} {ITEM} of '
 
 PREFIX_STORE = pathlib.Path('prefix-store.json')
 PREFIX_TABLE_STORE = pathlib.Path('prefix-table-store.json')
+PREFIX_HULL_STORE = pathlib.Path('prefix-hull-store.json')
+
+THE_HULLS = {
+    "type": "FeatureCollection",
+    'name': "Prefix Region Convex Hulls",
+    'crs': {
+        'type': 'name',
+        'properties': {
+            'name': 'urn:ogc:def:crs:OGC:1.3:CRS84',
+        },
+    },
+    "features": []
+}
+HULL_TEMPLATE = {
+    "type": "Feature",
+    "id": '',
+    "properties": {
+        "name": ''
+    },
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": []
+    }
+}
 
 Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 
@@ -110,6 +160,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     with open(PREFIX_TABLE_STORE, 'rt', encoding=ENCODING) as source:
         prefix_table_store = json.load(source)
 
+    prefix_hull_store = copy.deepcopy(THE_HULLS)
     slash = '/'
     prefixes = sorted(prefix_table_store.keys())
     num_prefixes = len(prefixes)
@@ -127,7 +178,9 @@ def main(argv: Union[List[str], None] = None) -> int:
         if DEBUG:
             log.debug('%s - %s' % (prefix, region_name))
         data_rows = []
+        trial_coords = []
         for airport in airports:
+            trial_coords.append((airport['latitude'], airport['longitude']))
             row = [str(cell) if key not in numbers else f'{round(cell, 3) :7.03f}' for key, cell in airport.items()]
             # monkey patching
             # ensure cycles are state with two digits zero left padded
@@ -146,6 +199,13 @@ def main(argv: Union[List[str], None] = None) -> int:
                 f'<td class="la">{row[6]}</td><td class="ra">{row[7]}</td>'
                 f'<td class="la">{row[8]}</td></tr>'
             )
+
+        the_hull_feature = copy.deepcopy(HULL_TEMPLATE)
+        the_hull_feature['id'] = prefix
+        the_hull_feature['properties']['name'] = region_name
+        the_hull_feature['geometry']['coordinates'].append([[lon, lat] for lat, lon in convex_hull(trial_coords)])
+        prefix_hull_store['features'].append(the_hull_feature)
+        # problem regions A1, NZ, NF, PA, UH,
 
         min_lat, min_lon = 90, 180
         max_lat, max_lon = -90, -180
@@ -201,6 +261,9 @@ def main(argv: Union[List[str], None] = None) -> int:
         html_path = pathlib.Path(my_prefix_path, 'index.html')
         with open(html_path, 'wt', encoding=ENCODING) as html_handle:
             html_handle.write(html_page)
+
+    with open(PREFIX_HULL_STORE, 'wt', encoding=ENCODING) as json_prefix_hull_handle:
+        json.dump(prefix_hull_store, json_prefix_hull_handle, indent=2)
 
     return 0
 
