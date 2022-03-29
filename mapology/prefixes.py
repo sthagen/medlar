@@ -15,7 +15,7 @@ THIS_YY_INT = int(dti.datetime.utcnow().strftime("%y"))
 
 COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 PATH_NAV = os.getenv('GEO_PATH_NAV', '')
-HOST_NAV = os.getenv('GEO_HOST_NAV', 'localhost')
+HOST_NAV = os.getenv('GEO_HOST_NAV', 'localhost:8080')
 AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
 
 FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
@@ -131,13 +131,20 @@ def main(argv: Union[List[str], None] = None) -> int:
         for airport in airports:
             row = [str(cell) if key not in numbers else f'{round(cell, 3) :7.03f}' for key, cell in airport.items()]
             # monkey patching
+            # ensure cycles are state with two digits zero left padded
             year, cyc = row[6].split(slash)
             row[6] = f'{year}/{int(cyc) :02d}'
+            # create a link to the airport page on the ICAO cell of the airport in the table row
+            # example: '<a href="AGAT/" class="nd" title="AGAT(Atoifi, Solomon Islands)">AGAT</a>'
+            an_icao = row[2]
+            a_name = row[8]
+            row[2] = f'<a href="{an_icao}/" class="nd" title="{a_name}">{an_icao}</a>'
             if DEBUG:
                 log.info('- | %s |' % (' | '.join(row)))
             data_rows.append(
                 f'<tr><td>{row[0]}</td><td>{row[1]}</td><td>{row[2]}</td>'
-                f'<td class="ra">{row[3]}</td><td class="ra">{row[4]}</td><td class="ra">{row[5]}</td><td class="la">{row[6]}</td><td class="ra">{row[7]}</td>'
+                f'<td class="ra">{row[3]}</td><td class="ra">{row[4]}</td><td class="ra">{row[5]}</td>'
+                f'<td class="la">{row[6]}</td><td class="ra">{row[7]}</td>'
                 f'<td class="la">{row[8]}</td></tr>'
             )
 
@@ -172,8 +179,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             json.dump(prefix_store[prefix], geojson_handle, indent=2)
 
         html_dict = {
-            f'{ANCHOR}/{IC_PREFIX_ICAO}': my_prefix_path,
-            f'{ANCHOR}/{IC_PREFIX}': f'prefix/{prefix}/',
+            ANCHOR: f'prefix/{prefix}/',
             CC_HINT: region_name,
             cc_page: region_name.split()[0].lower(),
             Cc_page: region_name.split()[0].title(),
