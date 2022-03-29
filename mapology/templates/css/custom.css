@@ -165,6 +165,7 @@ td, th {
     text-align: center;
     padding-left: 0.3rem;
     padding-right: 0.3rem;
+    font-size: 0.8rem;
 }
 th { background: lightblue;  border-color: white; }
 td:hover { background-color: #9CDCFE; }

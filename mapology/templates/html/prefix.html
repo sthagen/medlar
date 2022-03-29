@@ -90,7 +90,7 @@
                 let label = String(feature.properties.name)
                 return new L.CircleMarker(latlng, {
                     radius: 1,
-                }).bindTooltip(label, {direction: 'auto', interactive: true, opacity: 0.3, permanent: false}).openTooltip()
+                }).bindTooltip(label, {direction: 'auto', interactive: true, opacity: 0.7, permanent: false}).openTooltip()
             }
         })
         pointLayer.addData(data_points)
@@ -116,9 +116,31 @@
                 marker.bindTooltip(tooltip)
             })
         })
+        const airports = new L.LayerGroup()
+        airports.on('add', function () {
+            pointLayer.eachLayer(function (marker) {
+                const tooltip = marker.getTooltip()
+                if (tooltip && tooltip._content && tooltip._content.includes("class='apnd'")) {
+                    marker.unbindTooltip()
+                    tooltip.options.permanent = true
+                    marker.bindTooltip(tooltip)
+                }
+            })
+        })
+        airports.on('remove', function () {
+            pointLayer.eachLayer(function (marker) {
+                const tooltip = marker.getTooltip()
+                if (tooltip && tooltip._content && tooltip._content.includes("class='apnd'")) {
+                    marker.unbindTooltip()
+                    tooltip.options.permanent = false
+                    marker.bindTooltip(tooltip)
+                }
+            })
+        })
         const overlays = {
-            "AERONAUTICAL_ANNOTATIONS": pointLayer,
-            "Tooltips": tooltips
+            "AERONAUTICAL_ANNOTATIONS<br><hr size='1px'>": pointLayer,
+            "APT label<br><hr size='1px'>": airports,
+            "Every label": tooltips,
         }
 
         L.control.layers(baseLayers, overlays).addTo(the_map);

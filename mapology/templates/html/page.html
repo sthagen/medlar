@@ -35,11 +35,11 @@
         <h1>(City, CC_HINT) - Airport</h1>
         <div id="map"></div>
         <h2>Satellite Imagery &amp; More</h2>
-        <p>&nbsp;Airport: <a
+        <p>&nbsp;Airport <b>City</b>, CC_HINT (<a
                 href="URL"
-                class="no-decor" target="_blank">ICAO</a>
-            - (<a href="index.json" class="no-decor" target="_blank">GeoJSON data</a> |
-               <a href="index.r.txt" class="no-decor" target="_blank">R source</a>)
+                class="no-decor" title="Open Google maps at ICAO coordinates - right click to open in new tab">ICAO</a>
+            | <a href="index.json" class="no-decor" target="_blank" title="GeoJSON data of above feature layer">GeoJSON data</a> |
+               <a href="index.r.txt" class="no-decor" target="_blank" title="Download R source of above feature layer">R source</a>)
         </p>
         <table>
             <tr>
@@ -220,12 +220,12 @@
             })
         })
         const overlays = {
-            "Airports<br>- - - Labels:": pointLayer,
-//            "Labels": tooltips,
-            "- APT": airports,
-            "- RWY": runways,
-            "- LOC": localizers,
-            "- GLS": glideslopes,
+            "Airports<br><hr size='1px'>": pointLayer,
+            "APT label": airports,
+            "RW labels": runways,
+            "LOC labels": localizers,
+            "GLS labels<br><hr size='1px'>": glideslopes,
+            "Every label": tooltips,
         }
 
         L.control.layers(baseLayers, overlays).addTo(the_map);
