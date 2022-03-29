@@ -230,6 +230,9 @@
 
         L.control.layers(baseLayers, overlays).addTo(the_map);
 
+        const scale = L.control.scale()
+        scale.addTo(the_map)
+
         // enable Alt-Click to find coordinate at click position (hand cursor not so precise, but we can zoom)
         const popup = L.popup()
         function onMapClick(e) {
