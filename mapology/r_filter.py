@@ -28,7 +28,7 @@ THIS_YY_INT = int(dti.datetime.utcnow().strftime("%y"))
 
 COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 PATH_NAV = os.getenv('GEO_PATH_NAV', '')
-HOST_NAV = os.getenv('GEO_HOST_NAV', 'localhost')
+HOST_NAV = os.getenv('GEO_HOST_NAV', 'localhost:8080')
 AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
 
 FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
@@ -543,10 +543,17 @@ def main(argv: Union[List[str], None] = None) -> int:
             if s_identifier not in airport_name:
                 airport_name[s_identifier] = s_name
 
-            data_row = (
+            data_rows = []  # noqa
+            # monkey patching
+            # ensure cycles are state with two digits zero left padded
+            year, cyc = s_updated.split(slash)
+            s_updated_padded = f'{year}/{int(cyc) :02d}'
+            data_rows.append(
                 f'<tr><td>{s_area_code}</td><td>{s_prefix}</td><td>{s_identifier}</td>'
-                f'<td>{s_lat}</td><td>{s_lon}</td><td>{s_elev}</td><td>{s_updated}</td><td>{s_rec_num}</td>'
-                f'<td>{s_name}</td></tr>'
+                f'<td class="ra">{round(s_lat, 3) :7.03f}</td><td class="ra">{round(s_lon, 3) :7.03f}</td>'
+                f'<td class="ra">{round(s_elev, 3) :7.03f}</td>'
+                f'<td class="la">{s_updated_padded}</td><td class="ra">{s_rec_num}</td>'
+                f'<td class="la">{s_name}</td></tr>'
             )
 
             try:
@@ -631,7 +638,7 @@ def main(argv: Union[List[str], None] = None) -> int:
                 'index.r.txt': r_file_name,
                 'index.txt': f'airport-{root_icao}.json',
                 IC_PREFIX: ic_prefix,
-                'DATA_ROWS': f'{data_row}\n',
+                'DATA_ROWS': '\n'.join(data_rows) + '\n',
             }
             html_page = HTML_PAGE
             for key, replacement in html_dict.items():
