@@ -122,7 +122,7 @@ GEO_JSON_HEADER = {
 GEO_JSON_FEATURE: FeatureDict = {
     'type': 'Feature',
     'properties': {
-        'name': f"<a href='{URL}' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
+        'name': f"<a href='{URL}' class='nd' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
     },
     'geometry': {
         'type': 'Point',
@@ -144,7 +144,7 @@ GEO_JSON_PREFIX_HEADER: PHeaderDict = {
 GEO_JSON_PREFIX_FEATURE: PFeatureDict = {
     'type': 'Feature',
     'properties': {
-        'name': f"<a href='{URL}' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
+        'name': f"<a href='{URL}' class='nd' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
     },
     'geometry': {
         'type': 'Point',
@@ -349,12 +349,14 @@ def parse(record: str, seen: Dict[str, bool], data: Dict[str, List[Point]]) -> b
     return False
 
 
-def parse_data(reader: Callable[[], Iterator[str]]) -> Tuple[Dict[str, bool], Dict[str, List[Point]]]:
+def parse_data(reader: Callable[[], Iterator[str]]) -> Tuple[Dict[str, bool], Dict[str, List[Point]], List[str]]:
     """Parse the R language level data and return the entries and categories seen."""
     on = False  # The data start is within the file - not at the beginning
     seen = {k: False for k in (AIRP, RUNW, FREQ, LOCA, GLID)}
     data: Dict[str, List[Point]] = {}
+    lines = []
     for line in reader():
+        lines.append(line.strip())
         # log.debug('Read: %s' % line.strip())
         if on:
             record = line.strip().strip(TRIGGER_END_OF_DATA)
@@ -366,31 +368,84 @@ def parse_data(reader: Callable[[], Iterator[str]]) -> Tuple[Dict[str, bool], Di
         else:
             if line.strip().endswith(TRIGGER_END_OF_DATA):
                 break
-    return seen, data
+    return seen, data, lines
 
 
 def make_feature(coord_stack: Dict[Tuple[str, str], int], feature_data: List[Point], kind: str, cc: str, icao: str, apn: str) -> List[FeatureDict]:
     """DRY."""
-    local_features = []
+    glideslopes = {}
     for triplet in feature_data:
         label = triplet.label
         lat_str = triplet.lat
         lon_str = triplet.lon
         pair = (lat_str, lon_str)
-        if pair in coord_stack:
-            coord_stack[pair] += 2
-        else:
-            coord_stack[pair] = 0
+        if pair not in glideslopes:
+            glideslopes[pair] = {'local_id': None, 'kinds': []}
+        if label[-4:] in ('_DME', '_ILS', '_TAC'):
+            glideslopes[pair]['local_id'] = label[:-4]
+            glideslopes[pair]['kinds'].append(label[-3:])
+            glideslopes[pair]['kinds'].sort()
+
+    local_features = []
+    for triplet in feature_data:
         feature = copy.deepcopy(GEO_JSON_FEATURE)
-        name = feature['properties']['name']  # type: ignore
-        name = name.replace(ICAO, icao).replace(KIND, kind)
-        name = name.replace(ITEM, label).replace(TEXT, label)
-        name = name.replace(CITY, apn)
-        name = name.replace(CC_HINT, cc)
-        name = name.replace(URL, GOOGLE_MAPS_URL.format(lat=float(lat_str), lon=float(lon_str)))
-        if coord_stack[pair]:
-            spread = '<br>' * coord_stack[pair]
-            name = f'{spread}{name}'
+
+        label = triplet.label
+        lat_str = triplet.lat
+        lon_str = triplet.lon
+        pair = (lat_str, lon_str)
+        if kind == 'Frequency':
+            name = None
+        elif kind == 'Glideslope':
+            if pair in glideslopes and glideslopes[pair]['local_id'] is not None:
+                the_first = f'{glideslopes[pair]["local_id"]}_{glideslopes[pair]["kinds"][0]}'
+                if label == the_first:
+                    label_display = f'{glideslopes[pair]["local_id"]} ({", ".join(glideslopes[pair]["kinds"])})'
+                    name = feature['properties']['name']  # type: ignore
+                    name = name.replace(ICAO, icao).replace(KIND, kind)
+                    name = name.replace(ITEM, label_display).replace(TEXT, label_display)
+                    name = name.replace(CITY, apn)
+                    name = name.replace(CC_HINT, cc)
+                    name = '<small>' + name.replace(URL, GOOGLE_MAPS_URL.format(lat=float(lat_str), lon=float(lon_str))) + '</small>'
+                else:
+                    name = None
+            else:
+                name = feature['properties']['name']  # type: ignore
+                name = name.replace(ICAO, icao).replace(KIND, kind)
+                name = name.replace(ITEM, label).replace(TEXT, label)
+                name = name.replace(CITY, apn)
+                name = name.replace(CC_HINT, cc)
+                name = name.replace(URL, GOOGLE_MAPS_URL.format(lat=float(lat_str), lon=float(lon_str)))
+                if label.endswith('_DME'):
+                    name = f'{name}'
+                elif label.endswith('_ILS'):
+                    name = f'<br>{name}'
+                else:  # ... ends with _TAC
+                    name = f'<br><br>{name}'
+        elif kind == 'Runway':
+            label_display = f'{label.replace("RW", "")}'
+            name = feature['properties']['name']  # type: ignore
+            name = name.replace(ICAO, icao).replace(KIND, kind)
+            name = name.replace(ITEM, label_display).replace(TEXT, label_display)
+            name = name.replace(CITY, apn)
+            name = name.replace(CC_HINT, cc)
+            name = name.replace(URL, GOOGLE_MAPS_URL.format(lat=float(lat_str), lon=float(lon_str)))
+            name = name.replace("class='nd'", "class='rwnd'")
+        elif kind == 'Localizer':
+            label_display = f'{label} (Loc)'
+            name = feature['properties']['name']  # type: ignore
+            name = name.replace(ICAO, icao).replace(KIND, kind)
+            name = name.replace(ITEM, label_display).replace(TEXT, label_display)
+            name = name.replace(CITY, apn)
+            name = name.replace(CC_HINT, cc)
+            name = '<small>' + name.replace(URL, GOOGLE_MAPS_URL.format(lat=float(lat_str), lon=float(lon_str))) + '</small>'
+        else:
+            name = feature['properties']['name']  # type: ignore
+            name = name.replace(ICAO, icao).replace(KIND, kind)
+            name = name.replace(ITEM, label).replace(TEXT, label)
+            name = name.replace(CITY, apn)
+            name = name.replace(CC_HINT, cc)
+            name = name.replace(URL, GOOGLE_MAPS_URL.format(lat=float(lat_str), lon=float(lon_str)))
 
         feature['properties']['name'] = name  # type: ignore
         feature['geometry']['coordinates'].append(float(lon_str))  # type: ignore
@@ -424,6 +479,7 @@ def make_airport(coord_stack: Dict[Tuple[str, str], int], point: Point, cc: str,
     if coord_stack[pair]:
         spread = '<br>' * coord_stack[pair]
         name = f'{spread}{name}'
+    name = name.replace("class='nd'", "class='apnd'")
 
     airport['properties']['name'] = name  # type: ignore
     airport['geometry']['coordinates'].append(float(point.lon))  # type: ignore
@@ -516,7 +572,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         s_folder = pathlib.Path(str(pathlib.Path(r_path).parent).replace('/r/', '/json/'))  # HACK
 
         reader = functools.partial(read_file, r_path)
-        seen, data = parse_data(reader)  # type: ignore
+        seen, data, r_lines = parse_data(reader)  # type: ignore
 
         runway_count = 0
         if data and AIRP in data:
@@ -548,8 +604,11 @@ def main(argv: Union[List[str], None] = None) -> int:
             # ensure cycles are state with two digits zero left padded
             year, cyc = s_updated.split(slash)
             s_updated_padded = f'{year}/{int(cyc) :02d}'
+            # Make the ICAO cell entry a link to the google page
+            href = GOOGLE_MAPS_URL.format(lat=root_lat, lon=root_lon)
+            s_identifier_link = f'<a href="{href}" class="nd" target="_blank" title="{s_name}">{s_identifier}</a>'
             data_rows.append(
-                f'<tr><td>{s_area_code}</td><td>{s_prefix}</td><td>{s_identifier}</td>'
+                f'<tr><td>{s_area_code}</td><td>{s_prefix}</td><td>{s_identifier_link}</td>'
                 f'<td class="ra">{round(s_lat, 3) :7.03f}</td><td class="ra">{round(s_lon, 3) :7.03f}</td>'
                 f'<td class="ra">{round(s_elev, 3) :7.03f}</td>'
                 f'<td class="la">{s_updated_padded}</td><td class="ra">{s_rec_num}</td>'
@@ -617,6 +676,10 @@ def main(argv: Union[List[str], None] = None) -> int:
             with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
                 json.dump(geojson, geojson_handle, indent=2)
             log.debug('Wrote geojson to %s' % str(geojson_path))
+            r_source_path = str(pathlib.Path(map_folder, f'airport-with-runways-{root_icao}.r'))
+            with open(r_source_path, 'wt', encoding=ENCODING) as r_source_handle:
+                json.dump(geojson, r_source_handle, indent=2)
+            log.debug('Wrote R Source to %s' % str(r_source_path))
 
             html_dict = {
                 f'{ANCHOR}/{IC_PREFIX_ICAO}': my_prefix_path,
