@@ -55,7 +55,7 @@ ITEM = 'ITEM'
 KIND = 'KIND'
 PATH = '/PATH'
 BASE_URL_TARGET = 'BASE_URL'
-ANCHOR = '/ANCHOR'
+ANCHOR = 'ANCHOR'
 TEXT = 'TEXT'
 URL = 'URL'
 ZOOM = 'ZOOM'
@@ -130,6 +130,17 @@ GEO_JSON_FEATURE: FeatureDict = {
     },
 }
 
+GEO_JSON_APT_FEATURE: FeatureDict = {
+    'type': 'Feature',
+    'properties': {
+        'name': f"<a href='{URL}' class='apnd' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
+    },
+    'geometry': {
+        'type': 'Point',
+        'coordinates': [],  # Note: lon, lat
+    },
+}
+
 GEO_JSON_PREFIX_HEADER: PHeaderDict = {
     'type': 'FeatureCollection',
     'name': f'Region - {IC_PREFIX} ({CC_HINT})',
@@ -144,7 +155,7 @@ GEO_JSON_PREFIX_HEADER: PHeaderDict = {
 GEO_JSON_PREFIX_FEATURE: PFeatureDict = {
     'type': 'Feature',
     'properties': {
-        'name': f"<a href='{URL}' class='nd' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
+        'name': f"<a href='{URL}' class='apnd' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
     },
     'geometry': {
         'type': 'Point',
@@ -464,7 +475,7 @@ def make_airport(coord_stack: Dict[Tuple[str, str], int], point: Point, cc: str,
     name = name.replace(CC_HINT, cc)  # type: ignore
     geojson['name'] = name
 
-    airport = copy.deepcopy(GEO_JSON_FEATURE)
+    airport = copy.deepcopy(GEO_JSON_APT_FEATURE)
     name = airport['properties']['name']  # type: ignore
     name = name.replace(ICAO, icao).replace(TEXT, icao).replace(ATTRIBUTION, '')  # type: ignore
     name = name.replace(CITY, apn.title())  # type: ignore
@@ -479,7 +490,6 @@ def make_airport(coord_stack: Dict[Tuple[str, str], int], point: Point, cc: str,
     if coord_stack[pair]:
         spread = '<br>' * coord_stack[pair]
         name = f'{spread}{name}'
-    name = name.replace("class='nd'", "class='apnd'")
 
     airport['properties']['name'] = name  # type: ignore
     airport['geometry']['coordinates'].append(float(point.lon))  # type: ignore
