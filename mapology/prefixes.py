@@ -168,7 +168,7 @@ def main(argv: Union[List[str], None] = None) -> int:
 
         prefix_lat = 0.5 * (max_lat + min_lat)
         prefix_lon = 0.5 * (max_lon + min_lon)
-        bbox_disp = f"[({min_lat}, {min_lon}), ({max_lat}, {max_lon})]"
+        bbox_disp = f"[({round(min_lat, 3) :7.03f}, {round(min_lon, 3) :7.03f}), ({round(max_lat, 3) :7.03f}, {round(max_lon, 3) :7.03f})]"
         log.debug("Identified bounding box lat, lon in %s for prefix %s" % (bbox_disp, prefix))
         log.debug((f"Set center of prefix map to lat, lon = (%f, %f) for prefix %s" % (prefix_lat, prefix_lon, prefix)))
         prefix_root = pathlib.Path(FS_PREFIX_PATH)
@@ -192,6 +192,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             'ic_prefix_lower-geo.json': f'{prefix.lower()}-geo.json',
             'REGION_AIRPORT_COUNT_DISPLAY': f'{ra_count} airport{"" if ra_count == 1 else "s"}',
             'COUNTRY_COUNT_DISPLAY': f'{cc_count} region{"" if cc_count == 1 else "s"}',
+            'BBOX': f' contained in lat, lon bounding box {bbox_disp}',
             'DATA_ROWS': '\n'.join(data_rows) + '\n',
         }
         html_page = HTML_PAGE
