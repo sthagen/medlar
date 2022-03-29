@@ -133,7 +133,7 @@ GEO_JSON_FEATURE: FeatureDict = {
 GEO_JSON_APT_FEATURE: FeatureDict = {
     'type': 'Feature',
     'properties': {
-        'name': f"<a href='{URL}' class='apnd' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
+        'name': f"<a href='{URL}' class='apnd' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
     },
     'geometry': {
         'type': 'Point',
@@ -155,7 +155,7 @@ GEO_JSON_PREFIX_HEADER: PHeaderDict = {
 GEO_JSON_PREFIX_FEATURE: PFeatureDict = {
     'type': 'Feature',
     'properties': {
-        'name': f"<a href='{URL}' class='apnd' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
+        'name': f"<a href='{URL}' class='apnd' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
     },
     'geometry': {
         'type': 'Point',

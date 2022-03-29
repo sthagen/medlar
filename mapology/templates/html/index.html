@@ -4,25 +4,37 @@
     <meta charset="utf-8"/>
     <title>ICAO Prefix Index</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/navdb/_/leaflet/custom.min.css"/>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-100.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-600.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-100italic.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-200italic.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-italic.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/libre-franklin-v11-latin-600italic.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/SourceCodePro-ExtraLight.ttf.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/SourceCodePro-ExtraLightIt.ttf.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/SourceCodePro-Regular.ttf.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/SourceCodePro-It.ttf.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/SourceCodePro-Semibold.ttf.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/navdb/_/leaflet/SourceCodePro-SemiboldIt.ttf.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/navdb/_/leaflet/leaflet.min.css">
+    <link rel="stylesheet" href="/navdb/_/leaflet/custom.min.css">
+    <script src="/navdb/_/leaflet/leaflet.min.js"></script>
 </head>
 <body>
+<header>
+    <p>HOME <a href="BASE_URL/PATH/" class="no-decor">NavDB</a>
+            - <a href="BASE_URL/PATH/ICAO/" class="no-decor">ICAO</a>
+            / <a href="BASE_URL/PATH/ANCHOR" class="no-decor">Prefix Index</a></p>
+</header>
 <main>
     <section>
-        <h1>HOME <a href="https://HOST/PATH/" class="no-decor">NavDB</a>
-            - <a href="https://HOST/PATH/ICAO/" class="no-decor">ICAO</a>
-            / <a href="https://HOST/PATH/ANCHOR" class="no-decor">Prefix Index</a>
-        </h1>
+        <h1>Prefix Index</h1>
+        <div id="map"></div>
         <h2>Satellite Imagery &amp; More</h2>
         <p>NUMBER_REGIONS regions with TOTAL_AIRPORTS total airports available:</p>
         <table>
-            <tr>
-                <th>I\C</th>
-                <th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th>
-                <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th>
-                <th>K</th><th>L</th><th>M</th><th>N</th><th>O</th><th>P</th><th>Q</th><th>R</th><th>S</th><th>T</th>
-                <th>U</th><th>V</th><th>W</th><th>X</th><th>Y</th><th>Z</th>
-            </tr>
+            DATA_COLS
             DATA_ROWS
         </table>
     </section>
