@@ -23,11 +23,11 @@
 </head>
 <body>
 <header>
-    <p>HOME <a href="https://HOST/PATH/" class="no-decor">NavDB</a>
-            - ( <a href="https://HOST/PATH/IrealCAO/" class="no-decor">IrealCAO</a>
-            | <a href="https://HOST/PATH/country/cc_page.html" class="no-decor">Cc_page</a> )
-            / ( <a href="https://HOST/PATH/ANCHOR/IC_PREFIX" class="no-decor">IC_PREFIX</a>
-            / <a href="https://HOST/PATH/ANCHOR/IC_PREFIX_ICAO" class="no-decor">ICAO</a> )
+    <p>HOME <a href="BASE_URL/PATH/" class="no-decor">NavDB</a>
+            - ( <a href="BASE_URL/PATH/IrealCAO/" class="no-decor">IrealCAO</a>
+            | <a href="BASE_URL/PATH/country/cc_page.html" class="no-decor">Cc_page</a> )
+            / ( <a href="BASE_URL/PATH/ANCHOR/IC_PREFIX" class="no-decor">IC_PREFIX</a>
+            / <a href="BASE_URL/PATH/ANCHOR/IC_PREFIX_ICAO" class="no-decor">ICAO</a> )
             (City, CC_HINT) - Airport</p>
 </header>
 <main>
@@ -110,27 +110,122 @@
         tooltips.on('add', function () {
             pointLayer.eachLayer(function (marker) {
                 const tooltip = marker.getTooltip()
-                marker.unbindTooltip()
                 if (tooltip && tooltip._content !== 'null') {
-                    console.log(tooltip._content)
-                    tooltip.options.permanent = true
-                    marker.bindTooltip(tooltip)
+                    try {
+                        marker.unbindTooltip()
+                        tooltip.options.permanent = true
+                        marker.bindTooltip(tooltip)
+                    } catch (TypeError) {
+                        // do nothing for now ...
+                    }
                 }
             })
         })
         tooltips.on('remove', function () {
             pointLayer.eachLayer(function (marker) {
                 const tooltip = marker.getTooltip()
-                marker.unbindTooltip()
                 if (tooltip) {
-                    tooltip.options.permanent = false
+                    try {
+                        marker.unbindTooltip()
+                        tooltip.options.permanent = false
+                        marker.bindTooltip(tooltip)
+                    } catch (TypeError) {
+                        // do nothing for now ...
+                    }
                 }
-                marker.bindTooltip(tooltip)
+            })
+        })
+        const airports = new L.LayerGroup()
+        airports.on('add', function () {
+            pointLayer.eachLayer(function (marker) {
+                const tooltip = marker.getTooltip()
+                if (tooltip && tooltip._content && tooltip._content.includes("class='apnd'")) {
+                    marker.unbindTooltip()
+                    tooltip.options.permanent = true
+                    marker.bindTooltip(tooltip)
+                }
+            })
+        })
+        airports.on('remove', function () {
+            pointLayer.eachLayer(function (marker) {
+                const tooltip = marker.getTooltip()
+                if (tooltip && tooltip._content && tooltip._content.includes("class='apnd'")) {
+                    marker.unbindTooltip()
+                    tooltip.options.permanent = false
+                    marker.bindTooltip(tooltip)
+                }
+            })
+        })
+        const runways = new L.LayerGroup()
+        runways.on('add', function () {
+            pointLayer.eachLayer(function (marker) {
+                const tooltip = marker.getTooltip()
+                if (tooltip && tooltip._content && tooltip._content.includes('Runway')) {
+                    marker.unbindTooltip()
+                    tooltip.options.permanent = true
+                    marker.bindTooltip(tooltip)
+                }
+            })
+        })
+        runways.on('remove', function () {
+            pointLayer.eachLayer(function (marker) {
+                const tooltip = marker.getTooltip()
+                if (tooltip && tooltip._content && tooltip._content.includes('Runway')) {
+                    marker.unbindTooltip()
+                    tooltip.options.permanent = false
+                    marker.bindTooltip(tooltip)
+                }
+            })
+        })
+        const localizers = new L.LayerGroup()
+        localizers.on('add', function () {
+            pointLayer.eachLayer(function (marker) {
+                const tooltip = marker.getTooltip()
+                if (tooltip && tooltip._content && tooltip._content.includes('Localizer')) {
+                    marker.unbindTooltip()
+                    tooltip.options.permanent = true
+                    marker.bindTooltip(tooltip)
+                }
+            })
+        })
+        localizers.on('remove', function () {
+            pointLayer.eachLayer(function (marker) {
+                const tooltip = marker.getTooltip()
+                if (tooltip && tooltip._content && tooltip._content.includes('Localizer')) {
+                    marker.unbindTooltip()
+                    tooltip.options.permanent = false
+                    marker.bindTooltip(tooltip)
+                }
+            })
+        })
+        const glideslopes = new L.LayerGroup()
+        glideslopes.on('add', function () {
+            pointLayer.eachLayer(function (marker) {
+                const tooltip = marker.getTooltip()
+                if (tooltip && tooltip._content && tooltip._content.includes('Glideslope')) {
+                    marker.unbindTooltip()
+                    tooltip.options.permanent = true
+                    marker.bindTooltip(tooltip)
+                }
+            })
+        })
+        glideslopes.on('remove', function () {
+            pointLayer.eachLayer(function (marker) {
+                const tooltip = marker.getTooltip()
+                if (tooltip && tooltip._content && tooltip._content.includes('Glideslope')) {
+                    marker.unbindTooltip()
+                    tooltip.options.permanent = false
+                    marker.bindTooltip(tooltip)
+                }
             })
         })
         const overlays = {
-            "Airports": pointLayer,
-            "Tooltips": tooltips
+            "Airports<br>- - - Labels:": pointLayer,
+//            "Labels": tooltips,
+            "- APT": airports,
+            "- RWY": runways,
+            "- LOC": localizers,
+            "- GLS": glideslopes,
         }
 
         L.control.layers(baseLayers, overlays).addTo(the_map);
