@@ -28,7 +28,7 @@ THIS_YY_INT = int(dti.datetime.utcnow().strftime("%y"))
 
 COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 PATH_NAV = os.getenv('GEO_PATH_NAV', '')
-HOST_NAV = os.getenv('GEO_HOST_NAV', 'localhost:8080')
+BASE_URL = os.getenv('GEO_BASE_URL', 'http://localhost:8080')
 AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
 
 FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
@@ -53,9 +53,9 @@ IC_PREFIX = 'IC_PREFIX'
 IC_PREFIX_ICAO = f'{IC_PREFIX}_{ICAO}'
 ITEM = 'ITEM'
 KIND = 'KIND'
-PATH = 'PATH'
-HOST = 'HOST'
-ANCHOR = 'ANCHOR'
+PATH = '/PATH'
+BASE_URL_TARGET = 'BASE_URL'
+ANCHOR = '/ANCHOR'
 TEXT = 'TEXT'
 URL = 'URL'
 ZOOM = 'ZOOM'
@@ -693,7 +693,7 @@ def main(argv: Union[List[str], None] = None) -> int:
                 Cc_page: country_page_hack(cc_hint).title(),
                 LAT_LON: f'{root_lat},{root_lon}',
                 PATH: PATH_NAV,
-                HOST: HOST_NAV,
+                BASE_URL_TARGET: BASE_URL,
                 URL: GOOGLE_MAPS_URL.format(lat=root_lat, lon=root_lon),
                 ZOOM: str(max(DEFAULT_ZOOM - runway_count + 1, 9)),
                 'IrealCAO': ICAO,
