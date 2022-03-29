@@ -175,6 +175,10 @@ b { font-weight: 600; }
 
 .no-decor { text-decoration: none; }
 .nd { text-decoration: none; }
+a.apnd { text-decoration: none;  color: #090; font-weight: 600; font-size: 1.1rem; }
+a.apnd:hover { text-decoration: none;  color: #0b0; font-weight: 600; font-size: 1.15rem;}
+a.rwnd { text-decoration: none;  color: #900; font-weight: 400; font-size: 1.0rem; }
+a.rwnd:hover { text-decoration: none;  color: #f00; font-weight: 400; font-size: 1.1rem; }
 .leaflet-container {
     height: 640px;
     width: 1080px;
@@ -183,6 +187,8 @@ b { font-weight: 600; }
     font: 12px/1.5 'Libre Franklin', Verdana, sans-serif;
 }
 .leaflet-tooltip {
+    max-height: 1.1rem;
+    padding: 0.1rem;
     pointer-events: auto;
 }
 
