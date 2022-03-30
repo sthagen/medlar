@@ -95,9 +95,29 @@
         const pointLayer = L.geoJSON([], {
             pointToLayer: function (feature, latlng) {
                 let label = String(feature.properties.name)
+                let color  // noqa
+                let radius = 2
+                let permanent = false
+                if (label.includes('null')) return null
+
+                if (label.includes("class='apnd'")) {
+                    radius = 8
+                    color = '#090'
+                    permanent = true
+                }
+                else if (label.includes('Runway')) {
+                    radius = 4
+                    color = '#900'
+                }
+                else if (label.includes('Localizer')) color = '#00b'
+                else if (label.includes('Glideslope')) color = '#bb0'
+                else color = '#000'
+
+                const options = {direction: 'auto', interactive: true, opacity: 0.7, permanent: permanent}
                 return new L.CircleMarker(latlng, {
-                    radius: 1,
-                }).bindTooltip(label, {direction: 'auto', interactive: true, opacity: 0.7, permanent: false}).openTooltip()
+                    radius: radius,
+                    color: color
+                }).bindTooltip(label, options).openTooltip()
             }
         })
         pointLayer.addData(data_points)
@@ -106,119 +126,44 @@
             zoom: ZOOM,
             layers: [faded, pointLayer]
         })
+
+        const tester = (what, that, logic=true) => {
+            return what && what._content && (logic ? what._content.includes(that) : !what._content.includes(that))
+        }
+        const handle = (marker, action, search, logic) => {
+            const tt = marker.getTooltip()
+            if (tester(tt, search, logic)) {
+                try {
+                    marker.unbindTooltip()
+                    tt.options.permanent = action === 'add'
+                    marker.bindTooltip(tt)
+                } catch (TypeError) {
+                    // do nothing for now ...
+                }
+            }
+        }
         const tooltips = new L.LayerGroup()
-        tooltips.on('add', function () {
-            pointLayer.eachLayer(function (marker) {
-                const tooltip = marker.getTooltip()
-                if (tooltip && tooltip._content !== 'null') {
-                    try {
-                        marker.unbindTooltip()
-                        tooltip.options.permanent = true
-                        marker.bindTooltip(tooltip)
-                    } catch (TypeError) {
-                        // do nothing for now ...
-                    }
-                }
-            })
-        })
-        tooltips.on('remove', function () {
-            pointLayer.eachLayer(function (marker) {
-                const tooltip = marker.getTooltip()
-                if (tooltip) {
-                    try {
-                        marker.unbindTooltip()
-                        tooltip.options.permanent = false
-                        marker.bindTooltip(tooltip)
-                    } catch (TypeError) {
-                        // do nothing for now ...
-                    }
-                }
-            })
-        })
+        tooltips.on('add', () => pointLayer.eachLayer( label => handle(label, 'add', 'null', false) ) )
+        tooltips.on('remove', () => pointLayer.eachLayer( label => handle(label, 'remove', 'null', false) ) )
+
         const airports = new L.LayerGroup()
-        airports.on('add', function () {
-            pointLayer.eachLayer(function (marker) {
-                const tooltip = marker.getTooltip()
-                if (tooltip && tooltip._content && tooltip._content.includes("class='apnd'")) {
-                    marker.unbindTooltip()
-                    tooltip.options.permanent = true
-                    marker.bindTooltip(tooltip)
-                }
-            })
-        })
-        airports.on('remove', function () {
-            pointLayer.eachLayer(function (marker) {
-                const tooltip = marker.getTooltip()
-                if (tooltip && tooltip._content && tooltip._content.includes("class='apnd'")) {
-                    marker.unbindTooltip()
-                    tooltip.options.permanent = false
-                    marker.bindTooltip(tooltip)
-                }
-            })
-        })
+        airports.on('add', () => pointLayer.eachLayer( label => handle(label, 'add', "class='apnd'") ) )
+        airports.on('remove', () => pointLayer.eachLayer( label => handle(label, 'remove', "class='apnd'") ) )
+
         const runways = new L.LayerGroup()
-        runways.on('add', function () {
-            pointLayer.eachLayer(function (marker) {
-                const tooltip = marker.getTooltip()
-                if (tooltip && tooltip._content && tooltip._content.includes('Runway')) {
-                    marker.unbindTooltip()
-                    tooltip.options.permanent = true
-                    marker.bindTooltip(tooltip)
-                }
-            })
-        })
-        runways.on('remove', function () {
-            pointLayer.eachLayer(function (marker) {
-                const tooltip = marker.getTooltip()
-                if (tooltip && tooltip._content && tooltip._content.includes('Runway')) {
-                    marker.unbindTooltip()
-                    tooltip.options.permanent = false
-                    marker.bindTooltip(tooltip)
-                }
-            })
-        })
+        runways.on('add', () => pointLayer.eachLayer( label => handle(label, 'add', 'Runway') ) )
+        runways.on('remove', () => pointLayer.eachLayer( label => handle(label, 'remove', 'Runway') ) )
+
         const localizers = new L.LayerGroup()
-        localizers.on('add', function () {
-            pointLayer.eachLayer(function (marker) {
-                const tooltip = marker.getTooltip()
-                if (tooltip && tooltip._content && tooltip._content.includes('Localizer')) {
-                    marker.unbindTooltip()
-                    tooltip.options.permanent = true
-                    marker.bindTooltip(tooltip)
-                }
-            })
-        })
-        localizers.on('remove', function () {
-            pointLayer.eachLayer(function (marker) {
-                const tooltip = marker.getTooltip()
-                if (tooltip && tooltip._content && tooltip._content.includes('Localizer')) {
-                    marker.unbindTooltip()
-                    tooltip.options.permanent = false
-                    marker.bindTooltip(tooltip)
-                }
-            })
-        })
+        localizers.on('add', () => pointLayer.eachLayer( label => handle(label, 'add', 'Localizer') ) )
+        localizers.on('remove', () => pointLayer.eachLayer( label => handle(label, 'remove', 'Localizer') ) )
+
         const glideslopes = new L.LayerGroup()
-        glideslopes.on('add', function () {
-            pointLayer.eachLayer(function (marker) {
-                const tooltip = marker.getTooltip()
-                if (tooltip && tooltip._content && tooltip._content.includes('Glideslope')) {
-                    marker.unbindTooltip()
-                    tooltip.options.permanent = true
-                    marker.bindTooltip(tooltip)
-                }
-            })
-        })
-        glideslopes.on('remove', function () {
-            pointLayer.eachLayer(function (marker) {
-                const tooltip = marker.getTooltip()
-                if (tooltip && tooltip._content && tooltip._content.includes('Glideslope')) {
-                    marker.unbindTooltip()
-                    tooltip.options.permanent = false
-                    marker.bindTooltip(tooltip)
-                }
-            })
-        })
+        glideslopes.on('add', () => pointLayer.eachLayer( label => handle(label, 'add', 'Glideslope') ) )
+        glideslopes.on('remove', () => pointLayer.eachLayer( label => handle(label, 'remove', 'Glideslope') ) )
+
+        pointLayer.on("click", event => window.location = event.layer.getTooltip()._content.split("'")[1] )
+
         const overlays = {
             "Airports<br><hr size='1px'>": pointLayer,
             "APT label": airports,
@@ -229,7 +174,6 @@
         }
 
         L.control.layers(baseLayers, overlays).addTo(the_map);
-
         const scale = L.control.scale()
         scale.addTo(the_map)
 
