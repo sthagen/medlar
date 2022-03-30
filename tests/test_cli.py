@@ -1,25 +1,10 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring,unused-import,reimported
-import pytest  # type: ignore
-
 import mapology.cli as cli
 
 
-def test_main_nok_too_many_arguments():
-    message = r'main\(\) takes from 0 to 1 positional arguments but 2 were given'
-    with pytest.raises(TypeError, match=message):
-        cli.main(1, 2)
-
-
-def test_main_nok_empty_list(capsys):
-    assert cli.main([]) in (0, 2)  # TODO: Flaky result depending on execution context
-    expect_err = 'ERROR arguments expected.'
+def test_main_nok_too_many_arguments(capsys):
+    assert cli.main(['too', 'many']) == 2
     out, err = capsys.readouterr()
-    assert not out.strip()  # out.strip() == expect_err
-    assert not err.strip() or err.strip() == expect_err
-
-
-def test_main_ok_int(capsys):
-    assert cli.main([42]) == 0
-    out, err = capsys.readouterr()
-    assert out.strip() == ''
+    assert not err
+    assert out.rstrip() == 'usage: icao.py base/r/IC[/ICAO]'
