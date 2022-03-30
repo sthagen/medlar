@@ -203,7 +203,29 @@ def main(argv: Union[List[str], None] = None) -> int:
         the_hull_feature = copy.deepcopy(HULL_TEMPLATE)
         the_hull_feature['id'] = prefix
         the_hull_feature['properties']['name'] = region_name
-        the_hull_feature['geometry']['coordinates'].append([[lon, lat] for lat, lon in convex_hull(trial_coords)])
+
+        hull_coords = [[lon, lat] for lat, lon in convex_hull(trial_coords)]
+
+        lon_min = min(lon for lon, _ in hull_coords)
+        lon_max = max(lon for lon, _ in hull_coords)
+        if lon_min < -120 and +120 < lon_max:
+            log.info('Problematic region found (convex hull crossing the outer sign change of longitudes): %s' % prefix)
+            lon_sign = tuple(+1 if lon > 0 else -1 for lon, _ in hull_coords)
+            lon_neg_count = sum(-datum for datum in lon_sign if datum < 0)
+            lon_pos_count = sum(datum for datum in lon_sign if datum > 0)
+            if lon_pos_count and lon_neg_count:  # Does the polygon cross the longitude sign change?
+                log.info('- (%d positive / %d negative) longitudes: %s' % (lon_pos_count, lon_neg_count, prefix))
+                patch_me_up = lon_neg_count > lon_pos_count
+                add_me = +360 if patch_me_up else -360
+                if patch_me_up:
+                    log.info('- patching upwards (adding 360 degrees to longitude where negative): %s' % prefix)
+                    hull_coords = [[lon + add_me, lat] if lon < 0 else [lon, lat] for lon, lat in hull_coords]
+                else:
+                    log.info('- patching downwards (adding 360 degrees to longitude where positive): %s' % prefix)
+                    hull_coords = [[lon + add_me, lat] if lon > 0 else [lon, lat] for lon, lat in hull_coords]
+
+        the_hull_feature['geometry']['coordinates'].append(hull_coords)
+
         prefix_hull_store['features'].append(the_hull_feature)
         # problem regions A1, NZ, NF, PA, UH,
 
