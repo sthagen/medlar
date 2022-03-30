@@ -17,7 +17,7 @@ import logging
 import os
 import pathlib
 import sys
-from typing import Callable, Collection, Dict, Iterator, List, Mapping, Tuple, Union, no_type_check
+from typing import Any, Callable, Collection, Dict, Iterator, List, Mapping, Optional, Tuple, Union, no_type_check
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
@@ -123,8 +123,10 @@ GEO_JSON_HEADER = {
 GEO_JSON_FEATURE: FeatureDict = {
     'type': 'Feature',
     'properties': {
-        'name':
-            f"<a href='{URL}' class='nd' target='_blank' title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>",
+        'name': (
+            f"<a href='{URL}' class='nd' target='_blank'"
+            f" title='{KIND} {ITEM} of {ICAO}({CITY}, {CC_HINT})'>{TEXT}</a>"
+        ),
     },
     'geometry': {
         'type': 'Point',
@@ -384,7 +386,7 @@ def parse_data(reader: Callable[[], Iterator[str]]) -> Tuple[Dict[str, bool], Di
     return seen, data, lines
 
 
-def collect_glideslopes(feature_data: List[Point]) -> Mapping[str: object]:
+def collect_glideslopes(feature_data: List[Point]) -> dict[tuple[Any, Any], dict[str, Optional[list[Any]]]]:
     """DRY."""
     glideslopes = {}
     for triplet in feature_data:
@@ -588,7 +590,7 @@ def expand_tasks(text_path: str, path_sep: str, magic_token: str) -> List[str]:
     return tasks
 
 
-def best_effort_cc_hint(a_prefix: str, some_facts: Mapping[str: object], lookup: Mapping[str: object]) -> str:
+def best_effort_cc_hint(a_prefix: str, some_facts: Mapping[str, object], lookup: Mapping[str, str]) -> str:
     """DRY."""
     try:
         return lookup[a_prefix]
@@ -598,18 +600,16 @@ def best_effort_cc_hint(a_prefix: str, some_facts: Mapping[str: object], lookup:
         return lookup.get(some_facts.get('icao_code', 'ZZ'))
 
 
-def best_effort_prefix_path(a_prefix: str, a_root_icao: str, lookup: Mapping[str: object]) -> str:
+def best_effort_prefix_path(a_prefix: str, a_root_icao: str, lookup: Mapping[str, str]) -> str:
     """DRY."""
     try:
         return lookup[a_root_icao]
     except KeyError as err:
-        log.debug(
-            'Naive prefix path matcher failed falling back to derivation: %s' % str(err).replace('\n', '$NL$')
-        )
+        log.debug('Naive prefix path matcher failed falling back to derivation: %s' % str(err).replace('\n', '$NL$'))
         return f'/prefix/{a_prefix}/{a_root_icao}/'
 
 
-def write_json_store(at: pathlib.Path, what: Mapping[:str, object]) -> None:
+def write_json_store(at: pathlib.Path, what: Mapping[str, object]) -> None:
     """DRY."""
     with open(at, 'wt', encoding=ENCODING) as handle:
         json.dump(what, handle, indent=2)
@@ -698,7 +698,8 @@ def main(argv: Union[List[str], None] = None) -> int:
 
             if GLID in data:
                 geojson['features'].extend(  # type: ignore
-                    make_feature(coord_stack, data[GLID], 'Glideslope', *markers))
+                    make_feature(coord_stack, data[GLID], 'Glideslope', *markers)
+                )
 
             # Process prefix store
             if ic_prefix not in prefix_store:
