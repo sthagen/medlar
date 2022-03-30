@@ -32,6 +32,24 @@ BASE_URL = os.getenv('GEO_BASE_URL', 'http://localhost:8080')
 AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
 
 FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
+FS_DB_ROOT_PATH = os.getenv('GEO_DB_ROOT_PATH', 'db')
+
+FS_DB_STORE_PART = 'prefix-store'
+FS_DB_TABLE_PART = 'prefix-table'
+FS_DB_HULLS_PART = 'prefix-hulls'
+
+DB_ROOT = pathlib.Path(FS_DB_ROOT_PATH)
+DB_FOLDER_PATHS = {
+    'hulls': DB_ROOT / FS_DB_HULLS_PART,
+    'store': DB_ROOT / FS_DB_STORE_PART,
+    'table': DB_ROOT / FS_DB_TABLE_PART,
+}
+
+DB_INDEX_PATHS = {
+    'hulls': DB_ROOT / f'{FS_DB_HULLS_PART}.json',
+    'store': DB_ROOT / f'{FS_DB_STORE_PART}.json',
+    'table': DB_ROOT / f'{FS_DB_TABLE_PART}.json',
+}
 
 REC_SEP = ','
 STDIN_TOKEN = '-'
@@ -147,6 +165,7 @@ GEO_JSON_APT_FEATURE: FeatureDict = {
 
 GEO_JSON_PREFIX_HEADER: PHeaderDict = {
     'type': 'FeatureCollection',
+    'id': f'{IC_PREFIX}',
     'name': f'Region - {IC_PREFIX} ({CC_HINT})',
     'crs': {
         'type': 'name',
@@ -169,6 +188,7 @@ GEO_JSON_PREFIX_FEATURE: PFeatureDict = {
 
 JSON_PREFIX_TABLE_HEADER = {
     'type': 'x-prefix-table',
+    'id': f'{IC_PREFIX}',
     'name': f'Region - {IC_PREFIX} ({CC_HINT})',
     'crs': {
         'type': 'name',
@@ -208,16 +228,6 @@ prefix_path = {icao_from_key_path(k): k.rstrip(':') for k in airport_path_to_nam
 # load data like: {"AG": "Solomon Islands",}
 with open(pathlib.Path('icao_prefix_to_country_name.json'), 'rt', encoding=ENCODING) as handle:
     flat_prefix = json.load(handle)
-
-prefix_store = {}
-if PREFIX_STORE.exists() and PREFIX_STORE.is_file() and PREFIX_STORE.stat().st_size:
-    with open(PREFIX_STORE, 'rt', encoding=ENCODING) as handle:
-        prefix_store = json.load(handle)
-
-prefix_table_store = {}
-if PREFIX_TABLE_STORE.exists() and PREFIX_TABLE_STORE.is_file() and PREFIX_TABLE_STORE.stat().st_size:
-    with open(PREFIX_TABLE_STORE, 'rt', encoding=ENCODING) as handle:
-        prefix_table_store = json.load(handle)
 
 
 def derive_base_facts_path(folder: pathlib.Path, icao_identifier: str) -> pathlib.Path:
@@ -525,18 +535,16 @@ def make_airport(coord_stack: Dict[Tuple[str, str], int], point: Point, cc: str,
 def add_prefix(icp: str, cc: str) -> PHeaderDict:
     """DRY."""
     geojson = copy.deepcopy(GEO_JSON_PREFIX_HEADER)
-    name = geojson['name']
-    name = name.replace(IC_PREFIX, icp).replace(CC_HINT, cc)  # type: ignore
-    geojson['name'] = name
+    geojson['name'] = geojson['name'].replace(IC_PREFIX, icp).replace(CC_HINT, cc)  # type: ignore
+    geojson['id'] = geojson['id'].replace(IC_PREFIX, icp)  # type: ignore
     return geojson
 
 
 def add_table_prefix(icp: str, cc: str) -> PHeaderDict:
     """DRY."""
     table = copy.deepcopy(JSON_PREFIX_TABLE_HEADER)
-    name = table['name']
-    name = name.replace(IC_PREFIX, icp).replace(CC_HINT, cc)  # type: ignore
-    table['name'] = name
+    table['name'] = table['name'].replace(IC_PREFIX, icp).replace(CC_HINT, cc)  # type: ignore
+    table['id'] = table['id'].replace(IC_PREFIX, icp)  # type: ignore
     return table
 
 
@@ -619,12 +627,39 @@ def write_json_store(at: pathlib.Path, what: Mapping[str, object]) -> None:
         json.dump(what, handle, indent=2)
 
 
+def ensure_db_fs_tree():
+    """Ensure the DB folder tree exists."""
+    for db in DB_FOLDER_PATHS.values():
+        db.mkdir(parents=True, exist_ok=True)
+
+    for index in DB_INDEX_PATHS.values():
+        if not index.exists():
+            with open(index, 'wt', encoding=ENCODING) as handle:
+                json.dump({}, handle, indent=2)
+
+
+def load_db_index(kind: str) -> Mapping[str, str]:
+    """DRY."""
+    with open(DB_INDEX_PATHS[kind], 'rt', encoding=ENCODING) as handle:
+        return json.load(handle)
+
+
+def dump_db_index(kind: str, data: Mapping[str, str]) -> None:
+    """DRY."""
+    with open(DB_INDEX_PATHS[kind], 'wt', encoding=ENCODING) as handle:
+        json.dump(data, handle, indent=2)
+
+
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the derivation."""
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) != 1:
         print('usage: icao.py base/r/IC[/ICAO]')
         return 2
+
+    ensure_db_fs_tree()
+    store_index = load_db_index('store')
+    table_index = load_db_index('table')
 
     slash, magic = '/', '/r/'
     tasks = expand_tasks(argv[0], slash, magic)
@@ -705,21 +740,31 @@ def main(argv: Union[List[str], None] = None) -> int:
                     make_feature(coord_stack, data[GLID], 'Glideslope', *markers)
                 )
 
-            # Process prefix store
-            if ic_prefix not in prefix_store:
-                # Create initial entry for ICAO prefix
-                prefix_store[ic_prefix] = add_prefix(ic_prefix, cc_hint)
+            # Process store index and ensure prefix store is present
+            if ic_prefix not in store_index:
+                store_index[ic_prefix] = str(DB_FOLDER_PATHS['store'] / f'{ic_prefix}.json')  # type: ignore
+                # Create initial store data entry for ICAO prefix
+                with open(store_index[ic_prefix], 'wt', encoding=ENCODING) as handle:
+                    json.dump(add_prefix(ic_prefix, cc_hint), handle)
 
-            # Process prefix table store
-            if ic_prefix not in prefix_table_store:
-                # Create initial entry for ICAO prefix
-                prefix_table_store[ic_prefix] = add_table_prefix(ic_prefix, cc_hint)
+            with open(store_index[ic_prefix], 'rt', encoding=ENCODING) as handle:
+                prefix_store = json.load(handle)
 
-            ic_airport_names = set(airp['properties']['name'] for airp in prefix_store[ic_prefix]['features'])
+            # Process table index and ensure prefix table is present
+            if ic_prefix not in table_index:
+                table_index[ic_prefix] = str(DB_FOLDER_PATHS['table'] / f'{ic_prefix}.json')  # type: ignore
+                # Create initial table data entry for ICAO prefix
+                with open(table_index[ic_prefix], 'wt', encoding=ENCODING) as handle:
+                    json.dump(add_table_prefix(ic_prefix, cc_hint), handle)
+
+            with open(table_index[ic_prefix], 'rt', encoding=ENCODING) as handle:
+                table_store = json.load(handle)
+
+            ic_airport_names = set(airp['properties']['name'] for airp in prefix_store['features'])
             ic_airport = add_airport(triplet, *markers)
             if ic_airport['properties']['name'] not in ic_airport_names:  # type: ignore
-                prefix_store[ic_prefix]['features'].append(ic_airport)
-                prefix_table_store[ic_prefix]['airports'].append(make_table_row(facts))
+                prefix_store['features'].append(ic_airport)
+                table_store['airports'].append(make_table_row(facts))
 
             prefix_root = pathlib.Path(FS_PREFIX_PATH)
             map_folder = pathlib.Path(prefix_root, ic_prefix, root_icao)
@@ -765,11 +810,14 @@ def main(argv: Union[List[str], None] = None) -> int:
             with open(html_path, 'wt', encoding=ENCODING) as html_handle:
                 html_handle.write(html_page)
 
-            write_json_store(PREFIX_TABLE_STORE, prefix_table_store)
-            write_json_store(PREFIX_STORE, prefix_store)
+            write_json_store(pathlib.Path(table_index[ic_prefix]), table_store)
+            write_json_store(pathlib.Path(store_index[ic_prefix]), prefix_store)
 
         else:
             log.warning('no airport found with R sources.')
+
+    dump_db_index('table', table_index)
+    dump_db_index('store', store_index)
 
     return 0
 
