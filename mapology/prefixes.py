@@ -224,9 +224,11 @@ def main(argv: Union[List[str], None] = None) -> int:
                     log.info('- patching downwards (adding 360 degrees to longitude where positive): %s' % prefix)
                     hull_coords = [[lon + add_me, lat] if lon > 0 else [lon, lat] for lon, lat in hull_coords]
 
-        # monkey patch the ET region to offer an ear to select outside of ED
         if prefix == 'ET':
+            log.info('Patching a North-Eastern ear onto the hull: %s' % prefix)
+
             def et_earify(pair):
+                """Monkey patch the ET region to offer an ear to select outside of ED."""
                 lon_ne = 12.27  # 9333333333334,
                 lat_ne = 53.91  # 8166666666664
                 magic_lon = 13.648875
