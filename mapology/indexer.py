@@ -6,7 +6,7 @@ import logging
 import os
 import pathlib
 import sys
-from typing import Callable, Collection, Dict, Iterator, List, Tuple, Union, no_type_check
+from typing import Collection, Dict, List, Union, no_type_check
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
@@ -112,11 +112,8 @@ def main(argv: Union[List[str], None] = None) -> int:
         prefix_table_store = json.load(source)
 
     prefixes = sorted(prefix_table_store.keys())
-    num_prefixes = len(prefixes)
     row_slot_set = set(prefix[0] for prefix in prefixes)
-    num_rows = len(row_slot_set)
     col_slot_set = set(prefix[1] for prefix in prefixes)
-    num_cols = len(col_slot_set)
     columns = sorted(col_slot_set)
     rows = sorted(row_slot_set)
 
@@ -128,7 +125,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     regions, total_airports = 0, 0
     for prefix in prefix_store:
         regions += 1
-        count = len(prefix_store[prefix]["features"])
+        count = len(prefix_store[prefix]['features'])
         total_airports += count
         region_name = prefix_table_store[prefix]['name']
         table[prefix] = f'<td><a href="{prefix}/" class="nd" title="{region_name}">{count}</a></td>'
@@ -150,7 +147,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         data_rows.append(''.join(row))
 
         html_dict = {
-            ANCHOR: f'prefix/',
+            ANCHOR: 'prefix/',
             PATH: PATH_NAV,
             LAT_LON: '0, 0',
             ZOOM: str(DEFAULT_ZOOM),
