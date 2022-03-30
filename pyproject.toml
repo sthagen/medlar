@@ -2,10 +2,5 @@
 [tool.pyflow]
 name = "geojson_leaflet"
 py_version = "3.8"
-version = "0.1.0"
+version = "2022.3.31"
 authors = ["Stefan Hagen <stefan@hagen.link>"]
-
-[tool.pyflow.scripts]
-
-[tool.pyflow.dependencies]
-geojson = "^2.5.0"
