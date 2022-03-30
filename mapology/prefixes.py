@@ -9,7 +9,7 @@ import operator
 import os
 import pathlib
 import sys
-from typing import List, Union, no_type_check
+from typing import List, Mapping, Union, no_type_check
 
 ENCODING = 'utf-8'
 THIS_YY_INT = int(dti.datetime.utcnow().strftime('%y'))
@@ -20,6 +20,24 @@ BASE_URL = os.getenv('BASE_URL', 'http://localhost:8080')
 AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
 
 FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
+FS_DB_ROOT_PATH = os.getenv('GEO_DB_ROOT_PATH', 'db')
+
+FS_DB_STORE_PART = 'prefix-store'
+FS_DB_TABLE_PART = 'prefix-table'
+FS_DB_HULLS_PART = 'prefix-hulls'
+
+DB_ROOT = pathlib.Path(FS_DB_ROOT_PATH)
+DB_FOLDER_PATHS = {
+    'hulls': DB_ROOT / FS_DB_HULLS_PART,
+    'store': DB_ROOT / FS_DB_STORE_PART,
+    'table': DB_ROOT / FS_DB_TABLE_PART,
+}
+
+DB_INDEX_PATHS = {
+    'hulls': DB_ROOT / f'{FS_DB_HULLS_PART}.json',
+    'store': DB_ROOT / f'{FS_DB_STORE_PART}.json',
+    'table': DB_ROOT / f'{FS_DB_TABLE_PART}.json',
+}
 
 AIRP = 'airport'
 RUNW = 'runways'
@@ -145,6 +163,18 @@ def country_page_hack(phrase: str) -> str:
     return phrase.split()[0].lower()
 
 
+def load_db_index(kind: str) -> Mapping[str, str]:
+    """DRY."""
+    with open(DB_INDEX_PATHS[kind], 'rt', encoding=ENCODING) as handle:
+        return json.load(handle)
+
+
+def dump_db_index(kind: str, data: Mapping[str, str]) -> None:
+    """DRY."""
+    with open(DB_INDEX_PATHS[kind], 'wt', encoding=ENCODING) as handle:
+        json.dump(data, handle, indent=2)
+
+
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the prefix renderings."""
     argv = sys.argv[1:] if argv is None else argv
@@ -152,22 +182,29 @@ def main(argv: Union[List[str], None] = None) -> int:
         print('usage: prefixes.py')
         return 2
 
-    with open(PREFIX_STORE, 'rt', encoding=ENCODING) as source:
-        prefix_store = json.load(source)
-
-    with open(PREFIX_TABLE_STORE, 'rt', encoding=ENCODING) as source:
-        prefix_table_store = json.load(source)
+    store_index = load_db_index('store')
+    table_index = load_db_index('table')
+    hulls_index = load_db_index('hulls')
 
     prefix_hull_store = copy.deepcopy(THE_HULLS)
     slash = '/'
-    prefixes = sorted(prefix_table_store.keys())
+    prefixes = sorted(store_index.keys())
     num_prefixes = len(prefixes)
     many = num_prefixes > 10  # tenfold magic
     numbers = ('latitude', 'longitude', 'elevation')
     for current, prefix in enumerate(sorted(prefixes), start=1):
-        region_name = prefix_table_store[prefix]['name']
+
+        with open(store_index[prefix], 'rt', encoding=ENCODING) as handle:
+            prefix_store = json.load(handle)
+
+        with open(table_index[prefix], 'rt', encoding=ENCODING) as handle:
+            table_store = json.load(handle)
+
+        hulls_index[prefix] = str(DB_FOLDER_PATHS['hulls'] / f'{prefix}.json')  # type: ignore
+
+        region_name = table_store['name']
         my_prefix_path = f'{DEFAULT_OUT_PREFIX}/{prefix}'
-        airports = sorted(prefix_table_store[prefix]['airports'], key=operator.itemgetter('icao'))
+        airports = sorted(table_store['airports'], key=operator.itemgetter('icao'))
 
         message = f'processing {current :>3d}/{num_prefixes} {prefix} --> ({region_name}) ...'
         if not many or not current % 10 or current == num_prefixes:
@@ -198,9 +235,9 @@ def main(argv: Union[List[str], None] = None) -> int:
                 f'<td class="la">{row[8]}</td></tr>'
             )
 
-        the_hull_feature = copy.deepcopy(HULL_TEMPLATE)
-        the_hull_feature['id'] = prefix
-        the_hull_feature['properties']['name'] = region_name  # type: ignore
+        prefix_hull = copy.deepcopy(HULL_TEMPLATE)
+        prefix_hull['id'] = prefix
+        prefix_hull['properties']['name'] = region_name  # type: ignore
 
         hull_coords = [[lon, lat] for lat, lon in convex_hull(trial_coords)]
 
@@ -237,9 +274,8 @@ def main(argv: Union[List[str], None] = None) -> int:
 
             hull_coords = [et_earify(pair) for pair in hull_coords]
 
-        the_hull_feature['geometry']['coordinates'].append(hull_coords)  # type: ignore
-
-        prefix_hull_store['features'].append(the_hull_feature)  # type: ignore
+        prefix_hull['geometry']['coordinates'].append(hull_coords)  # type: ignore
+        prefix_hull_store['features'].append(copy.deepcopy(prefix_hull))
         # problem regions A1, NZ, NF, PA, UH,
 
         min_lat, min_lon = 90, 180
@@ -270,7 +306,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         map_folder.mkdir(parents=True, exist_ok=True)
         geojson_path = str(pathlib.Path(map_folder, f'{prefix.lower()}-geo.json'))
         with open(geojson_path, 'wt', encoding=ENCODING) as geojson_handle:
-            json.dump(prefix_store[prefix], geojson_handle, indent=2)
+            json.dump(prefix_store, geojson_handle, indent=2)
 
         html_dict = {
             ANCHOR: f'prefix/{prefix}/',
@@ -298,8 +334,13 @@ def main(argv: Union[List[str], None] = None) -> int:
         with open(html_path, 'wt', encoding=ENCODING) as html_handle:
             html_handle.write(html_page)
 
-    with open(PREFIX_HULL_STORE, 'wt', encoding=ENCODING) as json_prefix_hull_handle:
-        json.dump(prefix_hull_store, json_prefix_hull_handle, indent=2)
+        with open(hulls_index[prefix], 'wt', encoding=ENCODING) as handle:
+            json.dump(prefix_hull, handle, indent=2)
+
+    dump_db_index('hulls', hulls_index)
+
+    with open(pathlib.Path(FS_PREFIX_PATH) / 'region-hulls-geo.json', 'wt', encoding=ENCODING) as handle:
+        json.dump(prefix_hull_store, handle, indent=2)
 
     return 0
 
