@@ -30,7 +30,7 @@ mypy:
 
 .PHONY: test
 test:
-	pytest --cov=mapology --log-format="%(levelname)s %(message)s"
+	pytest --asyncio-mode=strict --cov=mapology --log-format="%(levelname)s %(message)s"
 
 .PHONY: testcov
 testcov: test
