@@ -42,6 +42,10 @@ all: lint mypy testcov
 
 .PHONY: clean
 clean:
+	rm -f db/*.json db/prefix-{hulls,store,table}/*.json
+
+.PHONY: distclean
+distclean: clean
 	rm -rf `find . -name __pycache__`
 	rm -f `find . -type f -name '*.py[co]' `
 	rm -f `find . -type f -name '*~' `
