@@ -230,11 +230,11 @@ def derive_geojson_in_path(folder: pathlib.Path, icao_identifier: str) -> pathli
     return pathlib.Path(folder, f'airport-{icao_identifier.upper()}.geojson')
 
 
-def parse_cycle_date(cycle_date_code: str) -> list[int, int]:
+def parse_cycle_date(cycle_date_code: str) -> Tuple[int, int]:
     """Parse string encoded cycle date into full (YYYY, cycle number)- pair."""
     dt, cy = int(cycle_date_code[:2]), int(cycle_date_code[2:])
     dt = 1900 + dt if dt > THIS_YY_INT else 2000 + dt
-    return [dt, cy]
+    return dt, cy
 
 
 def parse_int_or_empty(decimals: str) -> Union[int, None]:
@@ -242,6 +242,7 @@ def parse_int_or_empty(decimals: str) -> Union[int, None]:
     return None if not decimals.strip() else int(decimals.strip())
 
 
+@no_type_check
 def parse_base_facts(folder: pathlib.Path, icao_identifier: str) -> dict[str, Union[str, float]]:
     """Some additional attributes for the airport from database parsing.
 
@@ -386,6 +387,7 @@ def parse_data(reader: Callable[[], Iterator[str]]) -> Tuple[Dict[str, bool], Di
     return seen, data, lines
 
 
+@no_type_check
 def collect_glideslopes(feature_data: List[Point]) -> dict[tuple[Any, Any], dict[str, Optional[list[Any]]]]:
     """DRY."""
     glideslopes = {}
@@ -538,6 +540,7 @@ def add_table_prefix(icp: str, cc: str) -> PHeaderDict:
     return table
 
 
+@no_type_check
 def make_table_row(facts):
     row = copy.deepcopy(JSON_PREFIX_TABLE_ROW)
     row['area_code'] = facts['customer_area_code']
@@ -556,10 +559,10 @@ def add_airport(point: Point, cc: str, icao: str, apn: str) -> PFeatureDict:
     """DRY."""
     airport = copy.deepcopy(GEO_JSON_PREFIX_FEATURE)
     name = airport['properties']['name']  # type: ignore
-    name = name.replace(ICAO, icao).replace(TEXT, icao).replace(ATTRIBUTION, '')  # type: ignore
-    name = name.replace(CITY, apn.title())  # type: ignore
-    name = name.replace(URL, f'{icao}/')  # type: ignore
-    name = name.replace(CC_HINT, cc)  # type: ignore
+    name = name.replace(ICAO, icao).replace(TEXT, icao).replace(ATTRIBUTION, '')
+    name = name.replace(CITY, apn.title())
+    name = name.replace(URL, f'{icao}/')
+    name = name.replace(CC_HINT, cc)
     airport['properties']['name'] = name  # type: ignore
     airport['geometry']['coordinates'].append(float(point.lon))  # type: ignore
     airport['geometry']['coordinates'].append(float(point.lat))  # type: ignore
@@ -590,6 +593,7 @@ def expand_tasks(text_path: str, path_sep: str, magic_token: str) -> List[str]:
     return tasks
 
 
+@no_type_check
 def best_effort_cc_hint(a_prefix: str, some_facts: Mapping[str, object], lookup: Mapping[str, str]) -> str:
     """DRY."""
     try:
@@ -635,7 +639,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         s_folder = pathlib.Path(str(pathlib.Path(r_path).parent).replace('/r/', '/json/'))  # HACK
 
         reader = functools.partial(read_file, r_path)
-        seen, data, r_lines = parse_data(reader)  # type: ignore
+        seen, data, r_lines = parse_data(reader)
 
         runway_count = 0
         if data and AIRP in data:
@@ -683,7 +687,7 @@ def main(argv: Union[List[str], None] = None) -> int:
 
             markers = cc_hint, root_icao, s_name
 
-            coord_stack = {}
+            coord_stack: Dict[Tuple[str, str], int] = {}
             geojson = make_airport(coord_stack, triplet, *markers)
 
             if RUNW in data:
@@ -713,7 +717,7 @@ def main(argv: Union[List[str], None] = None) -> int:
 
             ic_airport_names = set(airp['properties']['name'] for airp in prefix_store[ic_prefix]['features'])
             ic_airport = add_airport(triplet, *markers)
-            if ic_airport['properties']['name'] not in ic_airport_names:
+            if ic_airport['properties']['name'] not in ic_airport_names:  # type: ignore
                 prefix_store[ic_prefix]['features'].append(ic_airport)
                 prefix_table_store[ic_prefix]['airports'].append(make_table_row(facts))
 
@@ -722,12 +726,12 @@ def main(argv: Union[List[str], None] = None) -> int:
             map_folder.mkdir(parents=True, exist_ok=True)
             write_json_store(geojson_path, geojson)
             log.debug('Wrote geojson to %s' % str(geojson_path))
-            geojson_path = str(pathlib.Path(map_folder, f'{root_icao.lower()}-geo.json'))
-            geo_json_name = pathlib.Path(geojson_path).name
-            write_json_store(pathlib.Path(geojson_path), geojson)
+            geojson_path = pathlib.Path(map_folder, f'{root_icao.lower()}-geo.json')
+            geo_json_name = geojson_path.name
+            write_json_store(geojson_path, geojson)
             log.debug('Wrote geojson to %s' % str(geojson_path))
-            r_source_path = str(pathlib.Path(map_folder, f'airport-with-runways-{root_icao}.r'))
-            write_json_store(pathlib.Path(r_source_path), geojson)
+            r_source_path = pathlib.Path(map_folder, f'airport-with-runways-{root_icao}.r')
+            write_json_store(r_source_path, geojson)
             log.debug('Wrote R Source to %s' % str(r_source_path))
 
             html_dict = {
