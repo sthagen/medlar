@@ -116,9 +116,7 @@
 
         pointLayer.on("click", event =>  window.location = `${event.layer.feature.id}/` )
 
-        function highlight(layer) {
-            console.log('Highlighted ...')
-            console.log(layer.feature.properties.name)
+        const highlight = layer => {
             layer.bindTooltip(layer.feature.properties.name).openTooltip()
             layer.color = '#900'
 
@@ -135,21 +133,13 @@
 
 
         }
-        function reset(layer) {
-            console.log('Reset ...')
-            console.log(layer.feature.properties.name)
+        const reset = layer => {
             layer.unbindTooltip()
             layer.color = '#00f'
             pointLayer.resetStyle(layer);
         }
-        pointLayer.on("mouseover", event => {
-            console.log('Entered ' + event.layer.feature.properties.name)
-            highlight(event.layer)
-        })
-        pointLayer.on('mouseout', event => {
-            console.log('Left ' + event.layer.feature.properties.name)
-            reset(event.layer)
-        })
+        pointLayer.on("mouseover", event => highlight(event.layer) )
+        pointLayer.on('mouseout', event => reset(event.layer) )
 
         const overlays = {
             "AERONAUTICAL_ANNOTATIONS<br><hr size='1px'>": pointLayer,
