@@ -40,7 +40,7 @@ ANCHOR = 'ANCHOR'
 TEXT = 'TEXT'
 URL = 'URL'
 ZOOM = 'ZOOM'
-DEFAULT_ZOOM = 4
+DEFAULT_ZOOM = 1
 
 icao = 'icao_lower'
 ic_prefix_token = 'ic_prefix_lower'
@@ -150,6 +150,8 @@ def main(argv: Union[List[str], None] = None) -> int:
         html_dict = {
             ANCHOR: f'prefix/',
             PATH: PATH_NAV,
+            LAT_LON: '0, 0',
+            ZOOM: str(DEFAULT_ZOOM),
             BASE_URL_TARGET: BASE_URL,
             'NUMBER_REGIONS': str(regions),
             'TOTAL_AIRPORTS': str(total_airports),
