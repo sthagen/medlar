@@ -224,6 +224,18 @@ def main(argv: Union[List[str], None] = None) -> int:
                     log.info('- patching downwards (adding 360 degrees to longitude where positive): %s' % prefix)
                     hull_coords = [[lon + add_me, lat] if lon > 0 else [lon, lat] for lon, lat in hull_coords]
 
+        # monkey patch the ET region to offer an ear to select outside of ED
+        if prefix == 'ET':
+            def et_earify(pair):
+                lon_ne = 12.27  # 9333333333334,
+                lat_ne = 53.91  # 8166666666664
+                magic_lon = 13.648875
+                magic_lat = 54.551359
+                lon, lat = pair
+                return [magic_lon, magic_lat] if lon > lon_ne and lat > lat_ne else [lon, lat]
+
+            hull_coords = [et_earify(pair) for pair in hull_coords]
+
         the_hull_feature['geometry']['coordinates'].append(hull_coords)
 
         prefix_hull_store['features'].append(the_hull_feature)
