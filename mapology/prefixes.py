@@ -9,10 +9,10 @@ import operator
 import os
 import pathlib
 import sys
-from typing import Callable, Collection, Dict, Iterator, List, Tuple, Union, no_type_check
+from typing import List, Union, no_type_check
 
 ENCODING = 'utf-8'
-THIS_YY_INT = int(dti.datetime.utcnow().strftime("%y"))
+THIS_YY_INT = int(dti.datetime.utcnow().strftime('%y'))
 
 COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 PATH_NAV = os.getenv('GEO_PATH_NAV', '')
@@ -80,15 +80,16 @@ def init_logger(name=None, level=None):
 init_logger(name=APP_ENV, level=logging.DEBUG if DEBUG else None)
 
 
+@no_type_check
 def convex_hull(coords):
     """Executes scan to return points in counter-clockwise order that are on the convex hull (Graham)."""
-    turn_left, turn_right, turn_none = 1, -1, 0
+    turn_left, turn_right, turn_none = 1, -1, 0  # noqa
 
     def compare(a, b):
         return float(a > b) - float(a < b)
 
     def turn(p, q, r):
-        return compare((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)
+        return compare((q[0] - p[0]) * (r[1] - p[1]) - (r[0] - p[0]) * (q[1] - p[1]), 0)
 
     def keep_left(hull, r):
         while len(hull) > 1 and turn(hull[-2], hull[-1], r) != turn_left:
@@ -110,26 +111,21 @@ PREFIX_TABLE_STORE = pathlib.Path('prefix-table-store.json')
 PREFIX_HULL_STORE = pathlib.Path('prefix-hull-store.json')
 
 THE_HULLS = {
-    "type": "FeatureCollection",
-    'name': "Prefix Region Convex Hulls",
+    'type': 'FeatureCollection',
+    'name': 'Prefix Region Convex Hulls',
     'crs': {
         'type': 'name',
         'properties': {
             'name': 'urn:ogc:def:crs:OGC:1.3:CRS84',
         },
     },
-    "features": []
+    'features': [],
 }
 HULL_TEMPLATE = {
-    "type": "Feature",
-    "id": '',
-    "properties": {
-        "name": ''
-    },
-    "geometry": {
-        "type": "Polygon",
-        "coordinates": []
-    }
+    'type': 'Feature',
+    'id': '',
+    'properties': {'name': ''},
+    'geometry': {'type': 'Polygon', 'coordinates': []},
 }
 
 Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
@@ -204,7 +200,7 @@ def main(argv: Union[List[str], None] = None) -> int:
 
         the_hull_feature = copy.deepcopy(HULL_TEMPLATE)
         the_hull_feature['id'] = prefix
-        the_hull_feature['properties']['name'] = region_name
+        the_hull_feature['properties']['name'] = region_name  # type: ignore
 
         hull_coords = [[lon, lat] for lat, lon in convex_hull(trial_coords)]
 
@@ -229,6 +225,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         if prefix == 'ET':
             log.info('Patching a North-Eastern ear onto the hull: %s' % prefix)
 
+            @no_type_check
             def et_earify(pair):
                 """Monkey patch the ET region to offer an ear to select outside of ED."""
                 lon_ne = 12.27  # 9333333333334,
@@ -240,9 +237,9 @@ def main(argv: Union[List[str], None] = None) -> int:
 
             hull_coords = [et_earify(pair) for pair in hull_coords]
 
-        the_hull_feature['geometry']['coordinates'].append(hull_coords)
+        the_hull_feature['geometry']['coordinates'].append(hull_coords)  # type: ignore
 
-        prefix_hull_store['features'].append(the_hull_feature)
+        prefix_hull_store['features'].append(the_hull_feature)  # type: ignore
         # problem regions A1, NZ, NF, PA, UH,
 
         min_lat, min_lon = 90, 180
@@ -265,9 +262,9 @@ def main(argv: Union[List[str], None] = None) -> int:
 
         prefix_lat = 0.5 * (max_lat + min_lat)
         prefix_lon = 0.5 * (max_lon + min_lon)
-        bbox_disp = f"[({round(min_lat, 3) :7.03f}, {round(min_lon, 3) :7.03f}), ({round(max_lat, 3) :7.03f}, {round(max_lon, 3) :7.03f})]"
-        log.debug("Identified bounding box lat, lon in %s for prefix %s" % (bbox_disp, prefix))
-        log.debug((f"Set center of prefix map to lat, lon = (%f, %f) for prefix %s" % (prefix_lat, prefix_lon, prefix)))
+        bbox_disp = f'[({", ".join(f"{round(v, 3) :7.03f}" for v in (min_lat, min_lon,max_lat, max_lon))}]'
+        log.debug('Identified bounding box lat, lon in %s for prefix %s' % (bbox_disp, prefix))
+        log.debug(('Set center of prefix map to lat, lon = (%f, %f) for prefix %s' % (prefix_lat, prefix_lon, prefix)))
         prefix_root = pathlib.Path(FS_PREFIX_PATH)
         map_folder = pathlib.Path(prefix_root, prefix)
         map_folder.mkdir(parents=True, exist_ok=True)
