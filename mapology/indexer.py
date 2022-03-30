@@ -41,6 +41,8 @@ TEXT = 'TEXT'
 URL = 'URL'
 ZOOM = 'ZOOM'
 DEFAULT_ZOOM = 1
+FOOTER_HTML = 'FOOTER_HTML'
+FOOTER_HTML_CONTENT = ' '
 
 icao = 'icao_lower'
 ic_prefix_token = 'ic_prefix_lower'
@@ -155,6 +157,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             BASE_URL_TARGET: BASE_URL,
             'NUMBER_REGIONS': str(regions),
             'TOTAL_AIRPORTS': str(total_airports),
+            FOOTER_HTML: FOOTER_HTML_CONTENT,
             'DATA_COLS': '\n'.join(data_cols),
             'DATA_ROWS': ''.join(data_rows),
         }

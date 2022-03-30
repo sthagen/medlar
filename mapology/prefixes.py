@@ -42,6 +42,8 @@ TEXT = 'TEXT'
 URL = 'URL'
 ZOOM = 'ZOOM'
 DEFAULT_ZOOM = 4
+FOOTER_HTML = 'FOOTER_HTML'
+FOOTER_HTML_CONTENT = ' '
 
 icao = 'icao_lower'
 LAT_LON = 'LAT_LON'
@@ -288,6 +290,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             'REGION_AIRPORT_COUNT_DISPLAY': f'{ra_count} airport{"" if ra_count == 1 else "s"}',
             'COUNTRY_COUNT_DISPLAY': f'{cc_count} region{"" if cc_count == 1 else "s"}',
             'BBOX': f' contained in lat, lon bounding box {bbox_disp}',
+            FOOTER_HTML: FOOTER_HTML_CONTENT,
             'DATA_ROWS': '\n'.join(data_rows) + '\n',
         }
         html_page = HTML_PAGE

@@ -60,6 +60,8 @@ TEXT = 'TEXT'
 URL = 'URL'
 ZOOM = 'ZOOM'
 DEFAULT_ZOOM = 16
+FOOTER_HTML = 'FOOTER_HTML'
+FOOTER_HTML_CONTENT = ' '
 
 icao = 'icao_lower'
 LAT_LON = 'LAT_LON'
@@ -711,6 +713,7 @@ def main(argv: Union[List[str], None] = None) -> int:
                 'index.r.txt': r_file_name,
                 'index.txt': f'airport-{root_icao}.json',
                 IC_PREFIX: ic_prefix,
+                FOOTER_HTML: FOOTER_HTML_CONTENT,
                 'DATA_ROWS': '\n'.join(data_rows) + '\n',
             }
             html_page = HTML_PAGE
