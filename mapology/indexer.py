@@ -6,7 +6,7 @@ import logging
 import os
 import pathlib
 import sys
-from typing import Collection, Dict, List, Union, no_type_check
+from typing import Collection, Dict, List, Mapping, Union, no_type_check
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
@@ -20,6 +20,24 @@ BASE_URL = os.getenv('BASE_URL', 'http://localhost:8080')
 AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
 
 FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
+FS_DB_ROOT_PATH = os.getenv('GEO_DB_ROOT_PATH', 'db')
+
+FS_DB_STORE_PART = 'prefix-store'
+FS_DB_TABLE_PART = 'prefix-table'
+FS_DB_HULLS_PART = 'prefix-hulls'
+
+DB_ROOT = pathlib.Path(FS_DB_ROOT_PATH)
+DB_FOLDER_PATHS = {
+    'hulls': DB_ROOT / FS_DB_HULLS_PART,
+    'store': DB_ROOT / FS_DB_STORE_PART,
+    'table': DB_ROOT / FS_DB_TABLE_PART,
+}
+
+DB_INDEX_PATHS = {
+    'hulls': DB_ROOT / f'{FS_DB_HULLS_PART}.json',
+    'store': DB_ROOT / f'{FS_DB_STORE_PART}.json',
+    'table': DB_ROOT / f'{FS_DB_TABLE_PART}.json',
+}
 
 AIRP = 'airport'
 RUNW = 'runways'
@@ -92,10 +110,17 @@ GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}'  # Sat + 
 with open(pathlib.Path('mapology', 'templates', 'html', 'index.html'), 'rt', encoding=ENCODING) as handle:
     HTML_PAGE = handle.read()
 
-prefix_store = {}
-if PREFIX_STORE.exists() and PREFIX_STORE.is_file() and PREFIX_STORE.stat().st_size:
-    with open(PREFIX_STORE, 'rt', encoding=ENCODING) as handle:
-        prefix_store = json.load(handle)
+
+def load_db_index(kind: str) -> Mapping[str, str]:
+    """DRY."""
+    with open(DB_INDEX_PATHS[kind], 'rt', encoding=ENCODING) as handle:
+        return json.load(handle)
+
+
+def dump_db_index(kind: str, data: Mapping[str, str]) -> None:
+    """DRY."""
+    with open(DB_INDEX_PATHS[kind], 'wt', encoding=ENCODING) as handle:
+        json.dump(data, handle, indent=2)
 
 
 def main(argv: Union[List[str], None] = None) -> int:
@@ -105,13 +130,11 @@ def main(argv: Union[List[str], None] = None) -> int:
         print('usage: indexer.py')
         return 2
 
-    with open(PREFIX_STORE, 'rt', encoding=ENCODING) as source:
-        prefix_store = json.load(source)
+    store_index = load_db_index('store')
+    table_index = load_db_index('table')
+    hulls_index = load_db_index('hulls')
 
-    with open(PREFIX_TABLE_STORE, 'rt', encoding=ENCODING) as source:
-        prefix_table_store = json.load(source)
-
-    prefixes = sorted(prefix_table_store.keys())
+    prefixes = sorted(table_index.keys())
     row_slot_set = set(prefix[0] for prefix in prefixes)
     col_slot_set = set(prefix[1] for prefix in prefixes)
     columns = sorted(col_slot_set)
@@ -123,11 +146,17 @@ def main(argv: Union[List[str], None] = None) -> int:
         log.info(row)
 
     regions, total_airports = 0, 0
-    for prefix in prefix_store:
+    for prefix in store_index:
+        with open(store_index[prefix], 'rt', encoding=ENCODING) as handle:
+            prefix_store = json.load(handle)
+
+        with open(table_index[prefix], 'rt', encoding=ENCODING) as handle:
+            table_store = json.load(handle)
+
         regions += 1
-        count = len(prefix_store[prefix]['features'])
+        count = len(prefix_store['features'])
         total_airports += count
-        region_name = prefix_table_store[prefix]['name']
+        region_name = table_store['name']
         table[prefix] = f'<td><a href="{prefix}/" class="nd" title="{region_name}">{count}</a></td>'
 
     tr_pad = 12
