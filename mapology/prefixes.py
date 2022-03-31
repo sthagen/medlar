@@ -201,7 +201,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         with open(table_index[prefix], 'rt', encoding=ENCODING) as handle:
             table_store = json.load(handle)
 
-        hulls_index[prefix] = str(DB_FOLDER_PATHS['hulls'] / f'{prefix}.json')
+        hulls_index[prefix] = str(DB_FOLDER_PATHS['hulls'] / f'{prefix}.json')  # noqa
 
         region_name = table_store['name']
         my_prefix_path = f'{DEFAULT_OUT_PREFIX}/{prefix}'
