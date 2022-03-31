@@ -163,6 +163,7 @@ def country_page_hack(phrase: str) -> str:
     return phrase.split()[0].lower()
 
 
+@no_type_check
 def load_db_index(kind: str) -> Mapping[str, str]:
     """DRY."""
     with open(DB_INDEX_PATHS[kind], 'rt', encoding=ENCODING) as handle:
@@ -200,7 +201,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         with open(table_index[prefix], 'rt', encoding=ENCODING) as handle:
             table_store = json.load(handle)
 
-        hulls_index[prefix] = str(DB_FOLDER_PATHS['hulls'] / f'{prefix}.json')  # type: ignore
+        hulls_index[prefix] = str(DB_FOLDER_PATHS['hulls'] / f'{prefix}.json')
 
         region_name = table_store['name']
         my_prefix_path = f'{DEFAULT_OUT_PREFIX}/{prefix}'
@@ -275,7 +276,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             hull_coords = [et_earify(pair) for pair in hull_coords]
 
         prefix_hull['geometry']['coordinates'].append(hull_coords)  # type: ignore
-        prefix_hull_store['features'].append(copy.deepcopy(prefix_hull))
+        prefix_hull_store['features'].append(copy.deepcopy(prefix_hull))  # type: ignore
         # problem regions A1, NZ, NF, PA, UH,
 
         min_lat, min_lon = 90, 180
