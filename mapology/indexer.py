@@ -111,6 +111,7 @@ with open(pathlib.Path('mapology', 'templates', 'html', 'index.html'), 'rt', enc
     HTML_PAGE = handle.read()
 
 
+@no_type_check
 def load_db_index(kind: str) -> Mapping[str, str]:
     """DRY."""
     with open(DB_INDEX_PATHS[kind], 'rt', encoding=ENCODING) as handle:
@@ -132,7 +133,6 @@ def main(argv: Union[List[str], None] = None) -> int:
 
     store_index = load_db_index('store')
     table_index = load_db_index('table')
-    hulls_index = load_db_index('hulls')
 
     prefixes = sorted(table_index.keys())
     row_slot_set = set(prefix[0] for prefix in prefixes)
