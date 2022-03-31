@@ -657,9 +657,9 @@ def update_aspect(index_db: Mapping[str, object], a_prefix: str, a_cc: str, kind
     if a_prefix not in index_db:
         index_db[a_prefix] = str(DB_FOLDER_PATHS[kind] / f'{a_prefix}.json')  # noqa
         # Create initial kinds' store data entry for ICAO prefix
+        factory = add_prefix if kind == 'store' else add_table_prefix
         with open(index_db[a_prefix], 'wt', encoding=ENCODING) as handle:  # noqa
-            json.dump(add_prefix(a_prefix, a_cc), handle)
-
+            json.dump(factory(a_prefix, a_cc), handle)
     with open(index_db[a_prefix], 'rt', encoding=ENCODING) as handle:  # noqa
         return json.load(handle)
 
