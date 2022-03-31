@@ -651,6 +651,19 @@ def dump_db_index(kind: str, data: Mapping[str, str]) -> None:
         json.dump(data, handle, indent=2)
 
 
+@no_type_check
+def update_aspect(index_db: Mapping[str, object], a_prefix: str, a_cc: str, kind: str) -> Mapping[str, object]:
+    """Process the kinds' index and ensure prefix aspect db is present"""
+    if a_prefix not in index_db:
+        index_db[a_prefix] = str(DB_FOLDER_PATHS[kind] / f'{a_prefix}.json')  # noqa
+        # Create initial kinds' store data entry for ICAO prefix
+        with open(index_db[a_prefix], 'wt', encoding=ENCODING) as handle:  # noqa
+            json.dump(add_prefix(a_prefix, a_cc), handle)
+
+    with open(index_db[a_prefix], 'rt', encoding=ENCODING) as handle:  # noqa
+        return json.load(handle)
+
+
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the derivation."""
     argv = sys.argv[1:] if argv is None else argv
@@ -741,31 +754,15 @@ def main(argv: Union[List[str], None] = None) -> int:
                     make_feature(coord_stack, data[GLID], 'Glideslope', *markers)
                 )
 
-            # Process store index and ensure prefix store is present
-            if ic_prefix not in store_index:
-                store_index[ic_prefix] = str(DB_FOLDER_PATHS['store'] / f'{ic_prefix}.json')
-                # Create initial store data entry for ICAO prefix
-                with open(store_index[ic_prefix], 'wt', encoding=ENCODING) as handle:
-                    json.dump(add_prefix(ic_prefix, cc_hint), handle)
+            # Process kinds' index and ensure kinds' prefix db is present
+            prefix_store = update_aspect(store_index, ic_prefix, cc_hint, 'store')
+            table_store = update_aspect(table_index, ic_prefix, cc_hint, 'table')
 
-            with open(store_index[ic_prefix], 'rt', encoding=ENCODING) as handle:
-                prefix_store = json.load(handle)
-
-            # Process table index and ensure prefix table is present
-            if ic_prefix not in table_index:
-                table_index[ic_prefix] = str(DB_FOLDER_PATHS['table'] / f'{ic_prefix}.json')
-                # Create initial table data entry for ICAO prefix
-                with open(table_index[ic_prefix], 'wt', encoding=ENCODING) as handle:
-                    json.dump(add_table_prefix(ic_prefix, cc_hint), handle)
-
-            with open(table_index[ic_prefix], 'rt', encoding=ENCODING) as handle:
-                table_store = json.load(handle)
-
-            ic_airport_names = set(airp['properties']['name'] for airp in prefix_store['features'])
+            ic_airport_names = set(airp['properties']['name'] for airp in prefix_store['features'])  # noqa
             ic_airport = add_airport(triplet, *markers)
             if ic_airport['properties']['name'] not in ic_airport_names:  # type: ignore
-                prefix_store['features'].append(ic_airport)
-                table_store['airports'].append(make_table_row(facts))
+                prefix_store['features'].append(ic_airport)  # noqa
+                table_store['airports'].append(make_table_row(facts))  # noqa
 
             prefix_root = pathlib.Path(FS_PREFIX_PATH)
             map_folder = pathlib.Path(prefix_root, ic_prefix, root_icao)
