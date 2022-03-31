@@ -627,7 +627,7 @@ def write_json_store(at: pathlib.Path, what: Mapping[str, object]) -> None:
         json.dump(what, handle, indent=2)
 
 
-def ensure_db_fs_tree():
+def ensure_db_fs_tree() -> None:
     """Ensure the DB folder tree exists."""
     for db in DB_FOLDER_PATHS.values():
         db.mkdir(parents=True, exist_ok=True)
@@ -638,6 +638,7 @@ def ensure_db_fs_tree():
                 json.dump({}, handle, indent=2)
 
 
+@no_type_check
 def load_db_index(kind: str) -> Mapping[str, str]:
     """DRY."""
     with open(DB_INDEX_PATHS[kind], 'rt', encoding=ENCODING) as handle:
@@ -742,7 +743,7 @@ def main(argv: Union[List[str], None] = None) -> int:
 
             # Process store index and ensure prefix store is present
             if ic_prefix not in store_index:
-                store_index[ic_prefix] = str(DB_FOLDER_PATHS['store'] / f'{ic_prefix}.json')  # type: ignore
+                store_index[ic_prefix] = str(DB_FOLDER_PATHS['store'] / f'{ic_prefix}.json')
                 # Create initial store data entry for ICAO prefix
                 with open(store_index[ic_prefix], 'wt', encoding=ENCODING) as handle:
                     json.dump(add_prefix(ic_prefix, cc_hint), handle)
@@ -752,7 +753,7 @@ def main(argv: Union[List[str], None] = None) -> int:
 
             # Process table index and ensure prefix table is present
             if ic_prefix not in table_index:
-                table_index[ic_prefix] = str(DB_FOLDER_PATHS['table'] / f'{ic_prefix}.json')  # type: ignore
+                table_index[ic_prefix] = str(DB_FOLDER_PATHS['table'] / f'{ic_prefix}.json')
                 # Create initial table data entry for ICAO prefix
                 with open(table_index[ic_prefix], 'wt', encoding=ENCODING) as handle:
                     json.dump(add_table_prefix(ic_prefix, cc_hint), handle)
