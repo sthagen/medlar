@@ -180,7 +180,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     """Drive the prefix renderings."""
     argv = sys.argv[1:] if argv is None else argv
     if argv:
-        print('usage: prefixes.py')
+        print('usage: mapology prefix')
         return 2
 
     store_index = load_db_index('store')

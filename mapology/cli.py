@@ -5,11 +5,47 @@
 import sys
 from typing import List, Union
 
+import mapology.countries_razor as razor
 import mapology.icao as icao
+import mapology.indexer as indexer
+import mapology.prefixes as prefixer
+
+USAGE = """\
+Synopsis:
+=========
+- render airports per ICAO:
+    mapology icao path/to/airborne/r/[IC/[ICAO/]]
+- render prefix pages ICAO prefix:
+    mapology prefix
+- render index page collecting prefixes:
+    mapology index
+- shave off some properties from the natural earth country data set:
+    mapology shave
+- this usage info:
+    mapology [-h,--help]
+"""
 
 
 # pylint: disable=expression-not-assigned
 def main(argv: Union[List[str], None] = None) -> int:
     """Delegate processing to functional module."""
     argv = sys.argv[1:] if argv is None else argv
-    return icao.main(argv)
+    usage = any(p in ('-h', '--help') for p in argv) or not argv
+    command, call, vector = '', None, []
+    if not usage and argv:
+        command = argv[0]
+        vector = argv[1:]
+        if command == 'icao':
+            call = icao.main
+        elif command == 'prefix':
+            call = prefixer.main
+        elif command == 'index':
+            call = indexer.main
+        elif command == 'shave':
+            call = razor.main
+
+    if usage or not call:
+        print(USAGE)
+        return 0 if usage else 2
+
+    return call(vector)

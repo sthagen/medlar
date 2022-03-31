@@ -79,7 +79,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     """Drive the shaving."""
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) != 1:
-        print('usage: countries_razor.py countries-to-be-shaved-geo.json-file')
+        print('usage: mapology shave countries-to-be-shaved-geo.json-file')
         return 2
 
     rococo_path = argv[0]

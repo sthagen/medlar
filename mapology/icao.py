@@ -668,7 +668,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     """Drive the derivation."""
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) != 1:
-        print('usage: icao.py base/r/IC[/ICAO]')
+        print('usage: mapology icao base/r/[IC/[ICAO]]')
         return 2
 
     ensure_db_fs_tree()

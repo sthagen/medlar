@@ -128,7 +128,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     """Drive the derivation."""
     argv = sys.argv[1:] if argv is None else argv
     if argv:
-        print('usage: indexer.py')
+        print('usage: mapology index')
         return 2
 
     store_index = load_db_index('store')
