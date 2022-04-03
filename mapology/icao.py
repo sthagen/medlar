@@ -12,7 +12,6 @@ import collections
 import copy
 import datetime as dti
 import functools
-import importlib.resources
 import json
 import logging
 import os
@@ -21,6 +20,7 @@ import sys
 from typing import Any, Callable, Collection, Dict, Iterator, List, Mapping, Optional, Tuple, Union, no_type_check
 
 import mapology.country as cc
+import mapology.template_loader as template
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
@@ -32,7 +32,13 @@ THIS_YY_INT = int(dti.datetime.utcnow().strftime('%y'))
 COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 PATH_NAV = os.getenv('GEO_PATH_NAV', '')
 BASE_URL = os.getenv('GEO_BASE_URL', 'http://localhost:8080')
+FOOTER_HTML_CONTENT = os.getenv('GEO_FOOTER_HTML_CONTENT', ' ')
 AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
+
+HTML_TEMPLATE = os.getenv('GEO_PAGE_HTML_TEMPLATE', '')
+HTML_TEMPLATE_IS_EXTERNAL = bool(HTML_TEMPLATE)
+if not HTML_TEMPLATE:
+    HTML_TEMPLATE = 'page_template.html'
 
 FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
 FS_DB_ROOT_PATH = os.getenv('GEO_DB_ROOT_PATH', 'db')
@@ -81,7 +87,6 @@ URL = 'URL'
 ZOOM = 'ZOOM'
 DEFAULT_ZOOM = 16
 FOOTER_HTML = 'FOOTER_HTML'
-FOOTER_HTML_CONTENT = ' '
 
 icao = 'icao_lower'
 LAT_LON = 'LAT_LON'
@@ -126,10 +131,6 @@ Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 
 # GOOGLE_MAPS_URL = f'https://www.google.com/maps/search/?api=1&query={{lat}}%2c{{lon}}'  # Map + pin Documented
 GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}'  # Sat + pin Undocumented
-
-with importlib.resources.path(__package__, 'page_template.html') as html_template_path:
-    with open(html_template_path, 'rt', encoding=ENCODING) as handle:
-        HTML_PAGE = handle.read().replace('AERONAUTICAL_ANNOTATIONS', AERONAUTICAL_ANNOTATIONS)
 
 GEO_JSON_HEADER = {
     'type': 'FeatureCollection',
@@ -773,7 +774,7 @@ def main(argv: Union[List[str], None] = None) -> int:
                 FOOTER_HTML: FOOTER_HTML_CONTENT,
                 'DATA_ROWS': '\n'.join(data_rows) + '\n',
             }
-            html_page = HTML_PAGE
+            html_page = template.load_html(HTML_TEMPLATE, HTML_TEMPLATE_IS_EXTERNAL)
             for key, replacement in html_dict.items():
                 html_page = html_page.replace(key, replacement)
 

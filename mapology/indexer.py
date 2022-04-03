@@ -1,13 +1,14 @@
 #! /usr/bin/env python
 """Generate index page for the rendered prefix trees."""
 import collections
-import importlib.resources
 import json
 import logging
 import os
 import pathlib
 import sys
 from typing import Collection, Dict, List, Mapping, Union, no_type_check
+
+import mapology.template_loader as template
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
@@ -18,7 +19,13 @@ ENCODING = 'utf-8'
 COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 PATH_NAV = os.getenv('GEO_PATH_NAV', '')
 BASE_URL = os.getenv('BASE_URL', 'http://localhost:8080')
+FOOTER_HTML_CONTENT = os.getenv('GEO_FOOTER_HTML_CONTENT', ' ')
 AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
+
+HTML_TEMPLATE = os.getenv('GEO_INDEX_HTML_TEMPLATE', '')
+HTML_TEMPLATE_IS_EXTERNAL = bool(HTML_TEMPLATE)
+if not HTML_TEMPLATE:
+    HTML_TEMPLATE = 'index_template.html'
 
 FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
 FS_DB_ROOT_PATH = os.getenv('GEO_DB_ROOT_PATH', 'db')
@@ -61,7 +68,6 @@ URL = 'URL'
 ZOOM = 'ZOOM'
 DEFAULT_ZOOM = 1
 FOOTER_HTML = 'FOOTER_HTML'
-FOOTER_HTML_CONTENT = ' '
 
 icao = 'icao_lower'
 ic_prefix_token = 'ic_prefix_lower'
@@ -106,10 +112,6 @@ Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 
 # GOOGLE_MAPS_URL = f'https://www.google.com/maps/search/?api=1&query={{lat}}%2c{{lon}}'  # Map + pin Documented
 GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}'  # Sat + pin Undocumented
-
-with importlib.resources.path(__package__, 'index_template.html') as html_template_path:
-    with open(html_template_path, 'rt', encoding=ENCODING) as handle:
-        HTML_PAGE = handle.read()
 
 
 @no_type_check
@@ -188,7 +190,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             'DATA_COLS': '\n'.join(data_cols),
             'DATA_ROWS': ''.join(data_rows),
         }
-        html_page = HTML_PAGE
+        html_page = template.load_html(HTML_TEMPLATE, HTML_TEMPLATE_IS_EXTERNAL)
         for key, replacement in html_dict.items():
             html_page = html_page.replace(key, replacement)
 
