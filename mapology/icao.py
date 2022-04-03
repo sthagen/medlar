@@ -12,6 +12,7 @@ import collections
 import copy
 import datetime as dti
 import functools
+import importlib.resources
 import json
 import logging
 import os
@@ -126,9 +127,9 @@ Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 # GOOGLE_MAPS_URL = f'https://www.google.com/maps/search/?api=1&query={{lat}}%2c{{lon}}'  # Map + pin Documented
 GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}'  # Sat + pin Undocumented
 
-# load html poor person template from file
-with open(pathlib.Path('mapology', 'templates', 'html', 'page.html'), 'rt', encoding=ENCODING) as handle:
-    HTML_PAGE = handle.read().replace('AERONAUTICAL_ANNOTATIONS', AERONAUTICAL_ANNOTATIONS)
+with importlib.resources.path(__package__, 'page_template.html') as html_template_path:
+    with open(html_template_path, 'rt', encoding=ENCODING) as handle:
+        HTML_PAGE = handle.read().replace('AERONAUTICAL_ANNOTATIONS', AERONAUTICAL_ANNOTATIONS)
 
 GEO_JSON_HEADER = {
     'type': 'FeatureCollection',
