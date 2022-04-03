@@ -8,27 +8,17 @@ import sys
 from typing import Collection, Dict, List, Mapping, Union, no_type_check
 
 import mapology.template_loader as template
-from mapology import log
+from mapology import BASE_URL, ENCODING, FOOTER_HTML_CONTENT, FS_DB_ROOT_PATH, FS_PREFIX_PATH, PATH_NAV, log
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
 PFeatureDict = Dict[str, Collection[str]]
-
-ENCODING = 'utf-8'
-
-COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
-PATH_NAV = os.getenv('GEO_PATH_NAV', '')
-BASE_URL = os.getenv('BASE_URL', 'http://localhost:8080')
-FOOTER_HTML_CONTENT = os.getenv('GEO_FOOTER_HTML_CONTENT', ' ')
-AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
 
 HTML_TEMPLATE = os.getenv('GEO_INDEX_HTML_TEMPLATE', '')
 HTML_TEMPLATE_IS_EXTERNAL = bool(HTML_TEMPLATE)
 if not HTML_TEMPLATE:
     HTML_TEMPLATE = 'index_template.html'
 
-FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
-FS_DB_ROOT_PATH = os.getenv('GEO_DB_ROOT_PATH', 'db')
 
 FS_DB_STORE_PART = 'prefix-store'
 FS_DB_TABLE_PART = 'prefix-table'
@@ -166,7 +156,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         for key, replacement in html_dict.items():
             html_page = html_page.replace(key, replacement)
 
-        html_path = pathlib.Path('prefix', 'index.html')
+        html_path = pathlib.Path(FS_PREFIX_PATH, 'index.html')
         with open(html_path, 'wt', encoding=ENCODING) as html_handle:
             html_handle.write(html_page)
 

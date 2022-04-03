@@ -3,6 +3,15 @@ import os
 import pathlib
 from typing import no_type_check
 
+ENCODING = 'utf-8'
+
+COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
+PATH_NAV = os.getenv('GEO_PATH_NAV', '')
+BASE_URL = os.getenv('BASE_URL', 'http://localhost:8080')
+FOOTER_HTML_CONTENT = os.getenv('GEO_FOOTER_HTML_CONTENT', ' ')
+FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
+FS_DB_ROOT_PATH = os.getenv('GEO_DB_ROOT_PATH', 'db')
+
 APP_ALIAS = 'mapology'
 APP_ENV = APP_ALIAS.upper()
 DEBUG = bool(os.getenv(f'{APP_ENV}_DEBUG', ''))
@@ -30,3 +39,10 @@ def init_logger(name=None, level=None):
 
 
 init_logger(name=APP_ENV, level=logging.DEBUG if DEBUG else None)
+
+
+def country_blurb(phrase: str) -> str:
+    """Return the first word in the hope it is meaningful."""
+    if COUNTRY_PAGE:
+        return COUNTRY_PAGE.lower()
+    return phrase.split()[0].lower()

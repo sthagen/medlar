@@ -20,28 +20,28 @@ from typing import Any, Callable, Collection, Dict, Iterator, List, Mapping, Opt
 
 import mapology.country as cc
 import mapology.template_loader as template
-from mapology import DEBUG, log
+from mapology import (
+    BASE_URL,
+    DEBUG,
+    ENCODING,
+    FOOTER_HTML_CONTENT,
+    FS_DB_ROOT_PATH,
+    FS_PREFIX_PATH,
+    PATH_NAV,
+    country_blurb,
+    log,
+)
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
 PFeatureDict = Dict[str, Collection[str]]
 
-ENCODING = 'utf-8'
 THIS_YY_INT = int(dti.datetime.utcnow().strftime('%y'))
-
-COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
-PATH_NAV = os.getenv('GEO_PATH_NAV', '')
-BASE_URL = os.getenv('GEO_BASE_URL', 'http://localhost:8080')
-FOOTER_HTML_CONTENT = os.getenv('GEO_FOOTER_HTML_CONTENT', ' ')
-AERONAUTICAL_ANNOTATIONS = os.getenv('GEO_PRIMARY_LAYER_SWITCH', 'Airports')
 
 HTML_TEMPLATE = os.getenv('GEO_PAGE_HTML_TEMPLATE', '')
 HTML_TEMPLATE_IS_EXTERNAL = bool(HTML_TEMPLATE)
 if not HTML_TEMPLATE:
     HTML_TEMPLATE = 'page_template.html'
-
-FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
-FS_DB_ROOT_PATH = os.getenv('GEO_DB_ROOT_PATH', 'db')
 
 FS_DB_STORE_PART = 'prefix-store'
 FS_DB_TABLE_PART = 'prefix-table'
@@ -257,13 +257,6 @@ def parse_base_facts(folder: pathlib.Path, icao_identifier: str) -> dict[str, Un
         'cycle_date': parse_cycle_date(raw['cycle_date']),  # Code '1913' -> [2019, 13]
         'file_record_number': int(raw['file_record_number'].strip()),  # Five digits wrap around counter within db
     }
-
-
-def country_page_hack(phrase: str) -> str:
-    """Return the first word in the hope it is meaningful."""
-    if COUNTRY_PAGE:
-        return COUNTRY_PAGE.lower()
-    return phrase.split()[0].lower()
 
 
 def read_stdin() -> Iterator[str]:
@@ -732,8 +725,8 @@ def main(argv: Union[List[str], None] = None) -> int:
                 City: AIRPORT_NAME[root_icao].title(),
                 CITY: AIRPORT_NAME[root_icao],
                 CC_HINT: cc_hint,
-                cc_page: country_page_hack(cc_hint),
-                Cc_page: country_page_hack(cc_hint).title(),
+                cc_page: country_blurb(cc_hint),
+                Cc_page: country_blurb(cc_hint).title(),
                 LAT_LON: f'{root_lat},{root_lon}',
                 PATH: PATH_NAV,
                 BASE_URL_TARGET: BASE_URL,
