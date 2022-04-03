@@ -690,6 +690,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         reader = functools.partial(read_file, r_path)
         seen, data, r_lines = parse_data(reader)
 
+        full_r_source = open(r_path, 'rt', encoding=ENCODING).read()
         runway_count = 0
         if data and AIRP in data:
             triplet = data[AIRP][0]
@@ -774,7 +775,8 @@ def main(argv: Union[List[str], None] = None) -> int:
             write_json_store(geojson_path, geojson)
             log.debug('Wrote geojson to %s' % str(geojson_path))
             r_source_path = pathlib.Path(map_folder, f'airport-with-runways-{root_icao}.r')
-            write_json_store(r_source_path, geojson)
+            with open(r_source_path, 'wt', encoding=ENCODING) as handle:
+                handle.write(full_r_source)
             log.debug('Wrote R Source to %s' % str(r_source_path))
 
             html_dict = {
