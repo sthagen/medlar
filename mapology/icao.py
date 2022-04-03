@@ -66,7 +66,6 @@ icao = 'icao_lower'
 LAT_LON = 'LAT_LON'
 cc_page = 'cc_page'
 Cc_page = 'Cc_page'
-DEFAULT_OUT_PREFIX = 'prefix'
 
 ATTRIBUTION = f'{KIND} {ITEM} of '
 

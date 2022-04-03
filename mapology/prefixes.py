@@ -2,7 +2,6 @@
 import collections
 import copy
 import datetime as dti
-import functools
 import json
 import operator
 import os
@@ -11,6 +10,7 @@ import sys
 from typing import List, Union, no_type_check
 
 import mapology.db as db
+import mapology.hull as hull
 import mapology.template_loader as template
 from mapology import BASE_URL, DEBUG, ENCODING, FOOTER_HTML_CONTENT, FS_PREFIX_PATH, PATH_NAV, log
 
@@ -48,52 +48,8 @@ icao = 'icao_lower'
 LAT_LON = 'LAT_LON'
 cc_page = 'cc_page'
 Cc_page = 'Cc_page'
-DEFAULT_OUT_PREFIX = 'prefix'
-
-
-@no_type_check
-def convex_hull(coords):
-    """Executes scan to return points in counter-clockwise order that are on the convex hull (Graham)."""
-    turn_left, turn_right, turn_none = 1, -1, 0  # noqa
-
-    def compare(a, b):
-        return float(a > b) - float(a < b)
-
-    def turn(p, q, r):
-        return compare((q[0] - p[0]) * (r[1] - p[1]) - (r[0] - p[0]) * (q[1] - p[1]), 0)
-
-    def keep_left(hull, r):
-        while len(hull) > 1 and turn(hull[-2], hull[-1], r) != turn_left:
-            hull.pop()
-        if not len(hull) or hull[-1] != r:
-            hull.append(r)
-        return hull
-
-    points = sorted(coords)
-    lower_hull = functools.reduce(keep_left, points, [])
-    upper_hull = functools.reduce(keep_left, reversed(points), [])
-    return lower_hull.extend(upper_hull[i] for i in range(1, len(upper_hull) - 1)) or lower_hull
-
 
 ATTRIBUTION = f'{KIND} {ITEM} of '
-
-THE_HULLS = {
-    'type': 'FeatureCollection',
-    'name': 'Prefix Region Convex Hulls',
-    'crs': {
-        'type': 'name',
-        'properties': {
-            'name': 'urn:ogc:def:crs:OGC:1.3:CRS84',
-        },
-    },
-    'features': [],
-}
-HULL_TEMPLATE = {
-    'type': 'Feature',
-    'id': '',
-    'properties': {'name': ''},
-    'geometry': {'type': 'Polygon', 'coordinates': []},
-}
 
 Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 
@@ -112,7 +68,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     table_index = db.load_index('table')
     hulls_index = db.load_index('hulls')
 
-    prefix_hull_store = copy.deepcopy(THE_HULLS)
+    prefix_hull_store = copy.deepcopy(hull.THE_HULLS)
     slash = '/'
     prefixes = sorted(store_index.keys())
     num_prefixes = len(prefixes)
@@ -129,7 +85,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         hulls_index[prefix] = db.hull_path(prefix)  # noqa
 
         region_name = table_store['name']
-        my_prefix_path = f'{DEFAULT_OUT_PREFIX}/{prefix}'
+        my_prefix_path = f'{FS_PREFIX_PATH}/{prefix}'
         airports = sorted(table_store['airports'], key=operator.itemgetter('icao'))
 
         message = f'processing {current :>3d}/{num_prefixes} {prefix} --> ({region_name}) ...'
@@ -161,11 +117,11 @@ def main(argv: Union[List[str], None] = None) -> int:
                 f'<td class="la">{row[8]}</td></tr>'
             )
 
-        prefix_hull = copy.deepcopy(HULL_TEMPLATE)
+        prefix_hull = copy.deepcopy(hull.HULL_TEMPLATE)
         prefix_hull['id'] = prefix
         prefix_hull['properties']['name'] = region_name  # type: ignore
 
-        hull_coords = [[lon, lat] for lat, lon in convex_hull(trial_coords)]
+        hull_coords = [[lon, lat] for lat, lon in hull.convex(trial_coords)]
 
         lon_min = min(lon for lon, _ in hull_coords)
         lon_max = max(lon for lon, _ in hull_coords)
