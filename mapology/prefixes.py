@@ -8,10 +8,11 @@ import operator
 import os
 import pathlib
 import sys
-from typing import List, Mapping, Union, no_type_check
+from typing import List, Union, no_type_check
 
+import mapology.db as db
 import mapology.template_loader as template
-from mapology import BASE_URL, DEBUG, ENCODING, FOOTER_HTML_CONTENT, FS_DB_ROOT_PATH, FS_PREFIX_PATH, PATH_NAV, log
+from mapology import BASE_URL, DEBUG, ENCODING, FOOTER_HTML_CONTENT, FS_PREFIX_PATH, PATH_NAV, log
 
 THIS_YY_INT = int(dti.datetime.utcnow().strftime('%y'))
 
@@ -19,23 +20,6 @@ HTML_TEMPLATE = os.getenv('GEO_PREFIX_HTML_TEMPLATE', '')
 HTML_TEMPLATE_IS_EXTERNAL = bool(HTML_TEMPLATE)
 if not HTML_TEMPLATE:
     HTML_TEMPLATE = 'prefix_template.html'
-
-FS_DB_STORE_PART = 'prefix-store'
-FS_DB_TABLE_PART = 'prefix-table'
-FS_DB_HULLS_PART = 'prefix-hulls'
-
-DB_ROOT = pathlib.Path(FS_DB_ROOT_PATH)
-DB_FOLDER_PATHS = {
-    'hulls': DB_ROOT / FS_DB_HULLS_PART,
-    'store': DB_ROOT / FS_DB_STORE_PART,
-    'table': DB_ROOT / FS_DB_TABLE_PART,
-}
-
-DB_INDEX_PATHS = {
-    'hulls': DB_ROOT / f'{FS_DB_HULLS_PART}.json',
-    'store': DB_ROOT / f'{FS_DB_STORE_PART}.json',
-    'table': DB_ROOT / f'{FS_DB_TABLE_PART}.json',
-}
 
 AIRP = 'airport'
 RUNW = 'runways'
@@ -121,19 +105,6 @@ Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}'  # Sat + pin Undocumented
 
 
-@no_type_check
-def load_db_index(kind: str) -> Mapping[str, str]:
-    """DRY."""
-    with open(DB_INDEX_PATHS[kind], 'rt', encoding=ENCODING) as handle:
-        return json.load(handle)
-
-
-def dump_db_index(kind: str, data: Mapping[str, str]) -> None:
-    """DRY."""
-    with open(DB_INDEX_PATHS[kind], 'wt', encoding=ENCODING) as handle:
-        json.dump(data, handle, indent=2)
-
-
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the prefix renderings."""
     argv = sys.argv[1:] if argv is None else argv
@@ -141,9 +112,9 @@ def main(argv: Union[List[str], None] = None) -> int:
         print('usage: mapology prefix')
         return 2
 
-    store_index = load_db_index('store')
-    table_index = load_db_index('table')
-    hulls_index = load_db_index('hulls')
+    store_index = db.load_index('store')
+    table_index = db.load_index('table')
+    hulls_index = db.load_index('hulls')
 
     prefix_hull_store = copy.deepcopy(THE_HULLS)
     slash = '/'
@@ -159,7 +130,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         with open(table_index[prefix], 'rt', encoding=ENCODING) as handle:
             table_store = json.load(handle)
 
-        hulls_index[prefix] = str(DB_FOLDER_PATHS['hulls'] / f'{prefix}.json')  # noqa
+        hulls_index[prefix] = db.hull_path(prefix)  # noqa
 
         region_name = table_store['name']
         my_prefix_path = f'{DEFAULT_OUT_PREFIX}/{prefix}'
@@ -296,7 +267,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         with open(hulls_index[prefix], 'wt', encoding=ENCODING) as handle:
             json.dump(prefix_hull, handle, indent=2)
 
-    dump_db_index('hulls', hulls_index)
+    db.dump_index('hulls', hulls_index)
 
     with open(pathlib.Path(FS_PREFIX_PATH) / 'region-hulls-geo.json', 'wt', encoding=ENCODING) as handle:
         json.dump(prefix_hull_store, handle, indent=2)

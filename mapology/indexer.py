@@ -5,10 +5,11 @@ import json
 import os
 import pathlib
 import sys
-from typing import Collection, Dict, List, Mapping, Union, no_type_check
+from typing import Collection, Dict, List, Union
 
+import mapology.db as db
 import mapology.template_loader as template
-from mapology import BASE_URL, ENCODING, FOOTER_HTML_CONTENT, FS_DB_ROOT_PATH, FS_PREFIX_PATH, PATH_NAV, log
+from mapology import BASE_URL, ENCODING, FOOTER_HTML_CONTENT, FS_PREFIX_PATH, PATH_NAV, log
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
@@ -18,24 +19,6 @@ HTML_TEMPLATE = os.getenv('GEO_INDEX_HTML_TEMPLATE', '')
 HTML_TEMPLATE_IS_EXTERNAL = bool(HTML_TEMPLATE)
 if not HTML_TEMPLATE:
     HTML_TEMPLATE = 'index_template.html'
-
-
-FS_DB_STORE_PART = 'prefix-store'
-FS_DB_TABLE_PART = 'prefix-table'
-FS_DB_HULLS_PART = 'prefix-hulls'
-
-DB_ROOT = pathlib.Path(FS_DB_ROOT_PATH)
-DB_FOLDER_PATHS = {
-    'hulls': DB_ROOT / FS_DB_HULLS_PART,
-    'store': DB_ROOT / FS_DB_STORE_PART,
-    'table': DB_ROOT / FS_DB_TABLE_PART,
-}
-
-DB_INDEX_PATHS = {
-    'hulls': DB_ROOT / f'{FS_DB_HULLS_PART}.json',
-    'store': DB_ROOT / f'{FS_DB_STORE_PART}.json',
-    'table': DB_ROOT / f'{FS_DB_TABLE_PART}.json',
-}
 
 AIRP = 'airport'
 RUNW = 'runways'
@@ -76,19 +59,6 @@ Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}'  # Sat + pin Undocumented
 
 
-@no_type_check
-def load_db_index(kind: str) -> Mapping[str, str]:
-    """DRY."""
-    with open(DB_INDEX_PATHS[kind], 'rt', encoding=ENCODING) as handle:
-        return json.load(handle)
-
-
-def dump_db_index(kind: str, data: Mapping[str, str]) -> None:
-    """DRY."""
-    with open(DB_INDEX_PATHS[kind], 'wt', encoding=ENCODING) as handle:
-        json.dump(data, handle, indent=2)
-
-
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the derivation."""
     argv = sys.argv[1:] if argv is None else argv
@@ -96,8 +66,8 @@ def main(argv: Union[List[str], None] = None) -> int:
         print('usage: mapology index')
         return 2
 
-    store_index = load_db_index('store')
-    table_index = load_db_index('table')
+    store_index = db.load_index('store')
+    table_index = db.load_index('table')
 
     prefixes = sorted(table_index.keys())
     row_slot_set = set(prefix[0] for prefix in prefixes)

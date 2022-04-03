@@ -19,18 +19,9 @@ import sys
 from typing import Any, Callable, Collection, Dict, Iterator, List, Mapping, Optional, Tuple, Union, no_type_check
 
 import mapology.country as cc
+import mapology.db as db
 import mapology.template_loader as template
-from mapology import (
-    BASE_URL,
-    DEBUG,
-    ENCODING,
-    FOOTER_HTML_CONTENT,
-    FS_DB_ROOT_PATH,
-    FS_PREFIX_PATH,
-    PATH_NAV,
-    country_blurb,
-    log,
-)
+from mapology import BASE_URL, DEBUG, ENCODING, FOOTER_HTML_CONTENT, FS_PREFIX_PATH, PATH_NAV, country_blurb, log
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
@@ -42,23 +33,6 @@ HTML_TEMPLATE = os.getenv('GEO_PAGE_HTML_TEMPLATE', '')
 HTML_TEMPLATE_IS_EXTERNAL = bool(HTML_TEMPLATE)
 if not HTML_TEMPLATE:
     HTML_TEMPLATE = 'page_template.html'
-
-FS_DB_STORE_PART = 'prefix-store'
-FS_DB_TABLE_PART = 'prefix-table'
-FS_DB_HULLS_PART = 'prefix-hulls'
-
-DB_ROOT = pathlib.Path(FS_DB_ROOT_PATH)
-DB_FOLDER_PATHS = {
-    'hulls': DB_ROOT / FS_DB_HULLS_PART,
-    'store': DB_ROOT / FS_DB_STORE_PART,
-    'table': DB_ROOT / FS_DB_TABLE_PART,
-}
-
-DB_INDEX_PATHS = {
-    'hulls': DB_ROOT / f'{FS_DB_HULLS_PART}.json',
-    'store': DB_ROOT / f'{FS_DB_STORE_PART}.json',
-    'table': DB_ROOT / f'{FS_DB_TABLE_PART}.json',
-}
 
 REC_SEP = ','
 STDIN_TOKEN = '-'
@@ -490,22 +464,6 @@ def make_airport(coord_stack: Dict[Tuple[str, str], int], point: Point, cc: str,
     return geojson
 
 
-def add_prefix(icp: str, cc: str) -> PHeaderDict:
-    """DRY."""
-    geojson = copy.deepcopy(GEO_JSON_PREFIX_HEADER)
-    geojson['name'] = geojson['name'].replace(IC_PREFIX, icp).replace(CC_HINT, cc)  # type: ignore
-    geojson['id'] = geojson['id'].replace(IC_PREFIX, icp)  # type: ignore
-    return geojson
-
-
-def add_table_prefix(icp: str, cc: str) -> PHeaderDict:
-    """DRY."""
-    table = copy.deepcopy(JSON_PREFIX_TABLE_HEADER)
-    table['name'] = table['name'].replace(IC_PREFIX, icp).replace(CC_HINT, cc)  # type: ignore
-    table['id'] = table['id'].replace(IC_PREFIX, icp)  # type: ignore
-    return table
-
-
 @no_type_check
 def make_table_row(facts):
     row = copy.deepcopy(JSON_PREFIX_TABLE_ROW)
@@ -565,43 +523,6 @@ def write_json_store(at: pathlib.Path, what: Mapping[str, object]) -> None:
         json.dump(what, handle, indent=2)
 
 
-def ensure_db_fs_tree() -> None:
-    """Ensure the DB folder tree exists."""
-    for db in DB_FOLDER_PATHS.values():
-        db.mkdir(parents=True, exist_ok=True)
-
-    for index in DB_INDEX_PATHS.values():
-        if not index.exists():
-            with open(index, 'wt', encoding=ENCODING) as handle:
-                json.dump({}, handle, indent=2)
-
-
-@no_type_check
-def load_db_index(kind: str) -> Mapping[str, str]:
-    """DRY."""
-    with open(DB_INDEX_PATHS[kind], 'rt', encoding=ENCODING) as handle:
-        return json.load(handle)
-
-
-def dump_db_index(kind: str, data: Mapping[str, str]) -> None:
-    """DRY."""
-    with open(DB_INDEX_PATHS[kind], 'wt', encoding=ENCODING) as handle:
-        json.dump(data, handle, indent=2)
-
-
-@no_type_check
-def update_aspect(index_db: Mapping[str, object], a_prefix: str, a_cc: str, kind: str) -> Mapping[str, object]:
-    """Process the kinds' index and ensure prefix aspect db is present"""
-    if a_prefix not in index_db:
-        index_db[a_prefix] = str(DB_FOLDER_PATHS[kind] / f'{a_prefix}.json')  # noqa
-        # Create initial kinds' store data entry for ICAO prefix
-        factory = add_prefix if kind == 'store' else add_table_prefix
-        with open(index_db[a_prefix], 'wt', encoding=ENCODING) as handle:  # noqa
-            json.dump(factory(a_prefix, a_cc), handle)
-    with open(index_db[a_prefix], 'rt', encoding=ENCODING) as handle:  # noqa
-        return json.load(handle)
-
-
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the derivation."""
     argv = sys.argv[1:] if argv is None else argv
@@ -609,9 +530,9 @@ def main(argv: Union[List[str], None] = None) -> int:
         print('usage: mapology icao base/r/[IC/[ICAO]]')
         return 2
 
-    ensure_db_fs_tree()
-    store_index = load_db_index('store')
-    table_index = load_db_index('table')
+    db.ensure_fs_tree()
+    store_index = db.load_index('store')
+    table_index = db.load_index('table')
 
     slash, magic = '/', '/r/'
     tasks = expand_tasks(argv[0], slash, magic)
@@ -694,8 +615,8 @@ def main(argv: Union[List[str], None] = None) -> int:
                 )
 
             # Process kinds' index and ensure kinds' prefix db is present
-            prefix_store = update_aspect(store_index, ic_prefix, cc_hint, 'store')
-            table_store = update_aspect(table_index, ic_prefix, cc_hint, 'table')
+            prefix_store = db.update_aspect(store_index, ic_prefix, cc_hint, 'store')
+            table_store = db.update_aspect(table_index, ic_prefix, cc_hint, 'table')
 
             ic_airport_names = set(airp['properties']['name'] for airp in prefix_store['features'])  # noqa
             ic_airport = add_airport(triplet, *markers)
@@ -754,8 +675,8 @@ def main(argv: Union[List[str], None] = None) -> int:
         else:
             log.warning('no airport found with R sources.')
 
-    dump_db_index('table', table_index)
-    dump_db_index('store', store_index)
+    db.dump_index('table', table_index)
+    db.dump_index('store', store_index)
 
     return 0
 
