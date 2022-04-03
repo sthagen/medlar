@@ -13,7 +13,6 @@ import copy
 import datetime as dti
 import functools
 import json
-import logging
 import os
 import pathlib
 import sys
@@ -21,6 +20,7 @@ from typing import Any, Callable, Collection, Dict, Iterator, List, Mapping, Opt
 
 import mapology.country as cc
 import mapology.template_loader as template
+from mapology import DEBUG, log
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
@@ -94,33 +94,6 @@ cc_page = 'cc_page'
 Cc_page = 'Cc_page'
 DEFAULT_OUT_PREFIX = 'prefix'
 
-APP_ALIAS = 'mapology'
-APP_ENV = APP_ALIAS.upper()
-DEBUG = bool(os.getenv(f'{APP_ENV}_DEBUG', ''))
-log = logging.getLogger()  # Temporary refactoring: module level logger
-LOG_FOLDER = pathlib.Path('logs')
-LOG_FILE = f'{APP_ALIAS}.log'
-LOG_PATH = pathlib.Path(LOG_FOLDER, LOG_FILE) if LOG_FOLDER.is_dir() else pathlib.Path(LOG_FILE)
-LOG_LEVEL = logging.INFO
-
-
-@no_type_check
-def init_logger(name=None, level=None):
-    """Initialize module level logger"""
-    global log  # pylint: disable=global-statement
-
-    log_format = {
-        'format': '%(asctime)s.%(msecs)03d %(levelname)s [%(name)s]: %(message)s',
-        'datefmt': '%Y-%m-%dT%H:%M:%S',
-        # 'filename': LOG_PATH,
-        'level': LOG_LEVEL if level is None else level,
-    }
-    logging.basicConfig(**log_format)
-    log = logging.getLogger(APP_ENV if name is None else name)
-    log.propagate = True
-
-
-init_logger(name=APP_ENV, level=logging.DEBUG if DEBUG else None)
 ATTRIBUTION = f'{KIND} {ITEM} of '
 
 PREFIX_STORE = pathlib.Path('prefix-store.json')
