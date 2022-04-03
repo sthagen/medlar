@@ -19,6 +19,8 @@ import pathlib
 import sys
 from typing import Any, Callable, Collection, Dict, Iterator, List, Mapping, Optional, Tuple, Union, no_type_check
 
+import mapology.country as cc
+
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
 PFeatureDict = Dict[str, Collection[str]]
@@ -117,6 +119,7 @@ ATTRIBUTION = f'{KIND} {ITEM} of '
 
 PREFIX_STORE = pathlib.Path('prefix-store.json')
 PREFIX_TABLE_STORE = pathlib.Path('prefix-table-store.json')
+AIRPORT_NAME = {}  # Example: {"GCFV": "FUERTEVENTURA",}
 
 Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 
@@ -211,23 +214,10 @@ JSON_PREFIX_TABLE_ROW = {
     'airport_name': '',
 }
 
-# load data like: {"prefix/00/00C/:": "ANIMAS",}
-with open(pathlib.Path('prefix_airport_names_for_index.json'), 'rt', encoding=ENCODING) as handle:
-    airport_path_to_name = json.load(handle)
-
 
 def icao_from_key_path(text: str) -> str:
     """HACK A DID ACK"""
     return text.rstrip('/:').rsplit('/', 1)[1]
-
-
-# Example: {"GCFV": "FUERTEVENTURA",}
-airport_name = {icao_from_key_path(k): v for k, v in airport_path_to_name.items()}
-prefix_path = {icao_from_key_path(k): k.rstrip(':') for k in airport_path_to_name}
-
-# load data like: {"AG": "Solomon Islands",}
-with open(pathlib.Path('icao_prefix_to_country_name.json'), 'rt', encoding=ENCODING) as handle:
-    flat_prefix = json.load(handle)
 
 
 def derive_base_facts_path(folder: pathlib.Path, icao_identifier: str) -> pathlib.Path:
@@ -601,26 +591,6 @@ def expand_tasks(text_path: str, path_sep: str, magic_token: str) -> List[str]:
     return tasks
 
 
-@no_type_check
-def best_effort_cc_hint(a_prefix: str, some_facts: Mapping[str, object], lookup: Mapping[str, str]) -> str:
-    """DRY."""
-    try:
-        return lookup[a_prefix]
-    except KeyError as err:
-        log.debug('Naive prefix matcher failed falling back to raw data: %s' % str(err).replace('\n', '$NL$'))
-        log.debug('DETAILS: %s' % str(some_facts))
-        return lookup.get(some_facts.get('icao_code', 'ZZ'))
-
-
-def best_effort_prefix_path(a_prefix: str, a_root_icao: str, lookup: Mapping[str, str]) -> str:
-    """DRY."""
-    try:
-        return lookup[a_root_icao]
-    except KeyError as err:
-        log.debug('Naive prefix path matcher failed falling back to derivation: %s' % str(err).replace('\n', '$NL$'))
-        return f'/prefix/{a_prefix}/{a_root_icao}/'
-
-
 def write_json_store(at: pathlib.Path, what: Mapping[str, object]) -> None:
     """DRY."""
     with open(at, 'wt', encoding=ENCODING) as handle:
@@ -713,8 +683,8 @@ def main(argv: Union[List[str], None] = None) -> int:
             s_rec_num = facts['file_record_number']
             geojson_path = derive_geojson_in_path(g_folder, s_identifier)
 
-            if s_identifier not in airport_name:
-                airport_name[s_identifier] = s_name
+            if s_identifier not in AIRPORT_NAME:
+                AIRPORT_NAME[s_identifier] = s_name
 
             data_rows = []  # noqa
             # monkey patching
@@ -732,8 +702,8 @@ def main(argv: Union[List[str], None] = None) -> int:
                 f'<td class="la">{s_name}</td></tr>'
             )
 
-            cc_hint = best_effort_cc_hint(ic_prefix, facts, flat_prefix)
-            my_prefix_path = best_effort_prefix_path(ic_prefix, root_icao, prefix_path)
+            cc_hint = cc.FROM_ICAO_PREFIX.get(facts.get('icao_code', 'ZZ'), 'No Country Entry Present')
+            my_prefix_path = f'/prefix/{ic_prefix}/{root_icao}/'
 
             markers = cc_hint, root_icao, s_name
 
@@ -784,8 +754,8 @@ def main(argv: Union[List[str], None] = None) -> int:
                 f'{ANCHOR}/{IC_PREFIX}': f'prefix/{ic_prefix}/',
                 ICAO: root_icao,
                 icao: root_icao.lower(),
-                City: airport_name[root_icao].title(),
-                CITY: airport_name[root_icao],
+                City: AIRPORT_NAME[root_icao].title(),
+                CITY: AIRPORT_NAME[root_icao],
                 CC_HINT: cc_hint,
                 cc_page: country_page_hack(cc_hint),
                 Cc_page: country_page_hack(cc_hint).title(),
