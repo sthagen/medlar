@@ -70,8 +70,6 @@ DEFAULT_OUT_PREFIX = 'prefix'
 
 ATTRIBUTION = f'{KIND} {ITEM} of '
 
-PREFIX_STORE = pathlib.Path('prefix-store.json')
-PREFIX_TABLE_STORE = pathlib.Path('prefix-table-store.json')
 AIRPORT_NAME = {}  # Example: {"GCFV": "FUERTEVENTURA",}
 
 Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
@@ -115,18 +113,6 @@ GEO_JSON_APT_FEATURE: FeatureDict = {
     },
 }
 
-GEO_JSON_PREFIX_HEADER: PHeaderDict = {
-    'type': 'FeatureCollection',
-    'id': f'{IC_PREFIX}',
-    'name': f'Region - {IC_PREFIX} ({CC_HINT})',
-    'crs': {
-        'type': 'name',
-        'properties': {
-            'name': 'urn:ogc:def:crs:OGC:1.3:CRS84',
-        },
-    },
-    'features': [],
-}
 GEO_JSON_PREFIX_FEATURE: PFeatureDict = {
     'type': 'Feature',
     'properties': {
@@ -136,19 +122,6 @@ GEO_JSON_PREFIX_FEATURE: PFeatureDict = {
         'type': 'Point',
         'coordinates': [],  # Note: lon, lat
     },
-}
-
-JSON_PREFIX_TABLE_HEADER = {
-    'type': 'x-prefix-table',
-    'id': f'{IC_PREFIX}',
-    'name': f'Region - {IC_PREFIX} ({CC_HINT})',
-    'crs': {
-        'type': 'name',
-        'properties': {
-            'name': 'urn:ogc:def:crs:OGC:1.3:CRS84',
-        },
-    },
-    'airports': [],
 }
 
 JSON_PREFIX_TABLE_ROW = {

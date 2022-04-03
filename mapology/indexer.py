@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 """Generate index page for the rendered prefix trees."""
-import collections
 import json
 import os
 import pathlib
@@ -49,11 +48,6 @@ cc_page = 'cc_page'
 Cc_page = 'Cc_page'
 
 ATTRIBUTION = f'{KIND} {ITEM} of '
-
-PREFIX_STORE = pathlib.Path('prefix-store.json')
-PREFIX_TABLE_STORE = pathlib.Path('prefix-table-store.json')
-
-Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 
 # GOOGLE_MAPS_URL = f'https://www.google.com/maps/search/?api=1&query={{lat}}%2c{{lon}}'  # Map + pin Documented
 GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}'  # Sat + pin Undocumented

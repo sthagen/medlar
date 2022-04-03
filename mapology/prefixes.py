@@ -77,10 +77,6 @@ def convex_hull(coords):
 
 ATTRIBUTION = f'{KIND} {ITEM} of '
 
-PREFIX_STORE = pathlib.Path('prefix-store.json')
-PREFIX_TABLE_STORE = pathlib.Path('prefix-table-store.json')
-PREFIX_HULL_STORE = pathlib.Path('prefix-hull-store.json')
-
 THE_HULLS = {
     'type': 'FeatureCollection',
     'name': 'Prefix Region Convex Hulls',
