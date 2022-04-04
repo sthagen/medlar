@@ -9,6 +9,7 @@ import mapology.countries_razor as razor
 import mapology.icao as icao
 import mapology.indexer as indexer
 import mapology.prefixes as prefixer
+import mapology.template_loader as template
 
 USAGE = """\
 Synopsis:
@@ -21,6 +22,8 @@ Synopsis:
     mapology index
 - shave off some properties from the natural earth country data set:
     mapology shave
+- eject the templates into the folder given (default EJECTED) and create the folder if it does not exist:
+    mapology eject [into]
 - this usage info:
     mapology [-h,--help]
 """
@@ -43,6 +46,8 @@ def main(argv: Union[List[str], None] = None) -> int:
             call = indexer.main
         elif command == 'shave':
             call = razor.main
+        elif command == 'eject':
+            call = template.eject
 
     if usage or not call:
         print(USAGE)
