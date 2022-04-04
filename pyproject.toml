@@ -1,6 +1,10 @@
-
 [tool.pyflow]
 name = "geojson_leaflet"
 py_version = "3.8"
-version = "2022.3.31"
+version = "2022.4.4"
 authors = ["Stefan Hagen <stefan@hagen.link>"]
+
+[tool.black]
+line-length = 120
+skip-string-normalization = "True"
+target-version = ["py38", "py39", "py310"]
