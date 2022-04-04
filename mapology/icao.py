@@ -21,7 +21,7 @@ from typing import Any, Callable, Collection, Dict, Iterator, List, Mapping, Opt
 import mapology.country as cc
 import mapology.db as db
 import mapology.template_loader as template
-from mapology import BASE_URL, DEBUG, ENCODING, FOOTER_HTML_CONTENT, FS_PREFIX_PATH, PATH_NAV, country_blurb, log
+from mapology import BASE_URL, DEBUG, ENCODING, FOOTER_HTML, FS_PREFIX_PATH, LIB_PATH, PATH_NAV, country_blurb, log
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
@@ -60,7 +60,8 @@ TEXT = 'TEXT'
 URL = 'URL'
 ZOOM = 'ZOOM'
 DEFAULT_ZOOM = 16
-FOOTER_HTML = 'FOOTER_HTML'
+FOOTER_HTML_KEY = 'FOOTER_HTML'
+LIB_PATH_KEY = 'LIB_PATH'
 
 icao = 'icao_lower'
 LAT_LON = 'LAT_LON'
@@ -630,7 +631,8 @@ def main(argv: Union[List[str], None] = None) -> int:
                 'index.r.txt': r_file_name,
                 'index.txt': f'airport-{root_icao}.json',
                 IC_PREFIX: ic_prefix,
-                FOOTER_HTML: FOOTER_HTML_CONTENT,
+                FOOTER_HTML_KEY: FOOTER_HTML,
+                LIB_PATH_KEY: LIB_PATH,
                 'DATA_ROWS': '\n'.join(data_rows) + '\n',
             }
             html_page = template.load_html(HTML_TEMPLATE, HTML_TEMPLATE_IS_EXTERNAL)
