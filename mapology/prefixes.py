@@ -9,10 +9,11 @@ import pathlib
 import sys
 from typing import List, Union
 
+import mapology.country as cc
 import mapology.db as db
 import mapology.hull as hull
 import mapology.template_loader as template
-from mapology import BASE_URL, DEBUG, ENCODING, FOOTER_HTML_CONTENT, FS_PREFIX_PATH, PATH_NAV, log
+from mapology import BASE_URL, DEBUG, ENCODING, FOOTER_HTML, FS_PREFIX_PATH, LIB_PATH, PATH_NAV, country_blurb, log
 
 THIS_YY_INT = int(dti.datetime.utcnow().strftime('%y'))
 
@@ -42,7 +43,8 @@ TEXT = 'TEXT'
 URL = 'URL'
 ZOOM = 'ZOOM'
 DEFAULT_ZOOM = 4
-FOOTER_HTML = 'FOOTER_HTML'
+FOOTER_HTML_KEY = 'FOOTER_HTML'
+LIB_PATH_KEY = 'LIB_PATH'
 
 icao = 'icao_lower'
 LAT_LON = 'LAT_LON'
@@ -85,6 +87,7 @@ def main(argv: Union[List[str], None] = None) -> int:
         hulls_index[prefix] = db.hull_path(prefix)  # noqa
 
         region_name = table_store['name']
+        cc_hint = cc.FROM_ICAO_PREFIX.get(prefix, 'No Country Entry Present')
         my_prefix_path = f'{FS_PREFIX_PATH}/{prefix}'
         airports = sorted(table_store['airports'], key=operator.itemgetter('icao'))
 
@@ -152,9 +155,9 @@ def main(argv: Union[List[str], None] = None) -> int:
 
         html_dict = {
             ANCHOR: f'prefix/{prefix}/',
-            CC_HINT: region_name,
-            cc_page: region_name.split()[0].lower(),
-            Cc_page: region_name.split()[0].title(),
+            CC_HINT: cc_hint,
+            cc_page: country_blurb(cc_hint),
+            Cc_page: country_blurb(cc_hint).title(),
             LAT_LON: f'{prefix_lat},{prefix_lon}',
             PATH: PATH_NAV,
             BASE_URL_TARGET: BASE_URL,
@@ -165,7 +168,8 @@ def main(argv: Union[List[str], None] = None) -> int:
             'REGION_AIRPORT_COUNT_DISPLAY': f'{ra_count} airport{"" if ra_count == 1 else "s"}',
             'COUNTRY_COUNT_DISPLAY': f'{cc_count} region{"" if cc_count == 1 else "s"}',
             'BBOX': f' contained in lat, lon bounding box {bbox_disp}',
-            FOOTER_HTML: FOOTER_HTML_CONTENT,
+            FOOTER_HTML_KEY: FOOTER_HTML,
+            LIB_PATH_KEY: LIB_PATH,
             'DATA_ROWS': '\n'.join(data_rows) + '\n',
         }
         html_page = template.load_html(HTML_TEMPLATE, HTML_TEMPLATE_IS_EXTERNAL)
