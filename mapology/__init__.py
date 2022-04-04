@@ -7,8 +7,9 @@ ENCODING = 'utf-8'
 
 COUNTRY_PAGE = os.getenv('GEO_COUNTRY_PAGE', '')
 PATH_NAV = os.getenv('GEO_PATH_NAV', '')
+LIB_PATH = os.getenv('GEO_LIB_PATH', '/ndb/_/leaflet')
 BASE_URL = os.getenv('BASE_URL', 'http://localhost:8080')
-FOOTER_HTML_CONTENT = os.getenv('GEO_FOOTER_HTML_CONTENT', ' ')
+FOOTER_HTML = os.getenv('GEO_FOOTER_HTML', ' ')
 FS_PREFIX_PATH = os.getenv('GEO_PREFIX_PATH', 'prefix')
 FS_DB_ROOT_PATH = os.getenv('GEO_DB_ROOT_PATH', 'db')
 
