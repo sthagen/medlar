@@ -8,7 +8,7 @@ from typing import Collection, Dict, List, Union
 
 import mapology.db as db
 import mapology.template_loader as template
-from mapology import BASE_URL, ENCODING, FOOTER_HTML_CONTENT, FS_PREFIX_PATH, PATH_NAV, log
+from mapology import BASE_URL, ENCODING, FOOTER_HTML, FS_PREFIX_PATH, LIB_PATH, PATH_NAV, log
 
 FeatureDict = Dict[str, Collection[str]]
 PHeaderDict = Dict[str, Collection[str]]
@@ -39,7 +39,8 @@ TEXT = 'TEXT'
 URL = 'URL'
 ZOOM = 'ZOOM'
 DEFAULT_ZOOM = 1
-FOOTER_HTML = 'FOOTER_HTML'
+FOOTER_HTML_KEY = 'FOOTER_HTML'
+LIB_PATH_KEY = 'LIB_PATH'
 
 icao = 'icao_lower'
 ic_prefix_token = 'ic_prefix_lower'
@@ -70,9 +71,9 @@ def main(argv: Union[List[str], None] = None) -> int:
     rows = sorted(row_slot_set)
 
     table = {f'{k}{j}': '<td>&nbsp;</td>' for k in rows for j in columns}
-    log.info('I\\C |' + ' | '.join(columns))
+    log.debug('I\\C |' + ' | '.join(columns))
     for row in rows:
-        log.info(row)
+        log.debug(row)
 
     regions, total_airports = 0, 0
     for prefix in store_index:
@@ -112,7 +113,8 @@ def main(argv: Union[List[str], None] = None) -> int:
             BASE_URL_TARGET: BASE_URL,
             'NUMBER_REGIONS': str(regions),
             'TOTAL_AIRPORTS': str(total_airports),
-            FOOTER_HTML: FOOTER_HTML_CONTENT,
+            FOOTER_HTML_KEY: FOOTER_HTML,
+            LIB_PATH_KEY: LIB_PATH,
             'DATA_COLS': '\n'.join(data_cols),
             'DATA_ROWS': ''.join(data_rows),
         }
