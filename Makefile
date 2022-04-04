@@ -50,10 +50,6 @@ distclean: clean
 	rm -f `find . -type f -name '*.py[co]' `
 	rm -f `find . -type f -name '*~' `
 	rm -f `find . -type f -name '.*~' `
-	rm -rf .cache
-	rm -rf htmlcov
-	rm -rf *.egg-info
-	rm -f .coverage
-	rm -f .coverage.*
-	rm -rf build
+	rm -f .coverage .coverage.*
+	rm -rf build dist/* db prefix htmlcov *.egg-info .cache
 	python setup.py clean
