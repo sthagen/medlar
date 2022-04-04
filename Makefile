@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := all
 isort = isort mapology tests
-black = black -S -l 120 --target-version py38 mapology tests
+black = black mapology tests
 
 .PHONY: install
 install:
