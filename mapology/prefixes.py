@@ -20,7 +20,7 @@ THIS_YY_INT = int(dti.datetime.utcnow().strftime('%y'))
 HTML_TEMPLATE = os.getenv('GEO_PREFIX_HTML_TEMPLATE', '')
 HTML_TEMPLATE_IS_EXTERNAL = bool(HTML_TEMPLATE)
 if not HTML_TEMPLATE:
-    HTML_TEMPLATE = 'prefix_template.html'
+    HTML_TEMPLATE = 'prefix_page_template.html'
 
 AIRP = 'airport'
 RUNW = 'runways'

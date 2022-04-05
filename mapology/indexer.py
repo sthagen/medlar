@@ -17,7 +17,7 @@ PFeatureDict = Dict[str, Collection[str]]
 HTML_TEMPLATE = os.getenv('GEO_INDEX_HTML_TEMPLATE', '')
 HTML_TEMPLATE_IS_EXTERNAL = bool(HTML_TEMPLATE)
 if not HTML_TEMPLATE:
-    HTML_TEMPLATE = 'index_template.html'
+    HTML_TEMPLATE = 'prefix_index_template.html'
 
 AIRP = 'airport'
 RUNW = 'runways'

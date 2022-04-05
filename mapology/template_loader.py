@@ -5,9 +5,13 @@ from typing import List, Union
 
 ENCODING = 'utf-8'
 RESOURCES = (
-    'index_template.html',
-    'page_template.html',
-    'prefix_template.html',
+    'airport_page_template.html',
+    'country_index_template.html',
+    'country_page_template.html',
+    'ndb_index_template.html',
+    'prefix_index_template.html',
+    'prefix_page_template.html',
+    'search_index_template.html',
 )
 
 

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>ICAO Prefix Index</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preload" href="LIB_PATH/libre-franklin-v11-latin-100.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="LIB_PATH/libre-franklin-v11-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="LIB_PATH/libre-franklin-v11-latin-600.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="LIB_PATH/libre-franklin-v11-latin-100italic.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="LIB_PATH/libre-franklin-v11-latin-200italic.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="LIB_PATH/libre-franklin-v11-latin-italic.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="LIB_PATH/libre-franklin-v11-latin-600italic.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="LIB_PATH/SourceCodePro-ExtraLight.ttf.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="LIB_PATH/SourceCodePro-ExtraLightIt.ttf.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="LIB_PATH/SourceCodePro-Regular.ttf.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="LIB_PATH/SourceCodePro-It.ttf.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="LIB_PATH/SourceCodePro-Semibold.ttf.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="LIB_PATH/SourceCodePro-SemiboldIt.ttf.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="LIB_PATH/leaflet.min.css">
+    <link rel="stylesheet" href="LIB_PATH/custom.min.css">
+    <script src="LIB_PATH/leaflet.min.js"></script>
+</head>
+<body>
+<header>
+    <p>HOME <a href="BASE_URL/PATH/" class="no-decor">NavDB</a>
+            - (<a href="BASE_URL/PATH/search/" class="no-decor">Search</a>
+            / <a href="BASE_URL/PATH/country" class="no-decor">Country Index</a>)
+            | <a href="BASE_URL/PATH/country/cc_page/" class="no-decor">Cc_page</a></p>
+</header>
+<main>
+    <section>
+        <h1>Prefix Index</h1>
+        <div id="map"></div>
+        <h2>Satellite Imagery &amp; More</h2>
+        <p>NUMBER_REGIONS regions with TOTAL_AIRPORTS total airports available:</p>
+        <table>
+            DATA_COLS
+            DATA_ROWS
+        </table>
+    </section>
+</main>
+<footer>
+    <address><p>FOOTER_HTML</p></address>
+</footer>
+<script>
+
+    function altHandler(event) {
+        let alt = event.altKey
+        document.body.className = alt ? 'alt-pressed' : ''
+    }
+
+    let div = document.querySelector('#map')
+    div.addEventListener('mousemove', altHandler)
+    window.addEventListener('keydown', altHandler)
+    window.addEventListener('keyup', altHandler)
+
+    let geo = null
+    async function load() {
+        let url = 'region-hulls-geo.json'
+        try {
+            geo = await (await fetch(url)).json()
+        } catch (e) {
+            console.log('error in loading GeoJSON data')
+        }
+        const ggUrl = 'https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}'
+        const ggAttr = '&copy; <a href="https://www.google.com/permissions/geoguidelines/attr-guide/"'
+            + ' target="_blank">Google</a> and contributors'
+        const osUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        const osAttr = '&copy; <a href="https://www.openstreetmap.org/copyright"'
+            + ' target="_blank">OpenStreetMap</a> contributors'
+        const mbUrl = 'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
+        const mbAttr = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+            'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>'
+        const satellite = L.tileLayer(ggUrl, {maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: ggAttr})
+        const streets = L.tileLayer(osUrl, {maxZoom: 20, attribution: osAttr})
+        const faded = L.tileLayer(mbUrl, {maxZoom: 18, id: 'mapbox/light-v9', tileSize: 512, zoomOffset: -1, attribution: mbAttr})
+        const baseLayers = {
+            "Faded": faded,
+            "Streets": streets,
+            "Satellite": satellite,
+        }
+        const data_points = geo
+        const pointLayer = L.geoJSON([], {
+            pointToLayer: function (feature, latlng) {
+                let label = String(feature.properties.name)
+                return new L.CircleMarker(latlng, {
+                    radius: 8,
+                    color: '#090'
+                }).bindTooltip(label, {direction: 'auto', interactive: true, opacity: 0.7, permanent: false}).openTooltip()
+            }
+        })
+        pointLayer.addData(data_points)
+        const the_map = L.map('map', {
+            center: [LAT_LON],
+            zoom: ZOOM,
+            layers: [faded, pointLayer]
+        })
+        const tester = (what, that, logic=true) => {
+            return what && what._content && (logic ? what._content.includes(that) : !what._content.includes(that))
+        }
+        const handle = (marker, action, search, logic) => {
+            const tt = marker.getTooltip()
+            if (tester(tt, search, logic)) {
+                try {
+                    marker.unbindTooltip()
+                    tt.options.permanent = action === 'add'
+                    marker.bindTooltip(tt)
+                } catch (TypeError) {
+                    // do nothing for now ...
+                }
+            }
+        }
+        const airports = new L.LayerGroup()
+        airports.on('add', () => pointLayer.eachLayer( label => handle(label, 'add', "class='apnd'") ) )
+        airports.on('remove', () => pointLayer.eachLayer( label => handle(label, 'remove', "class='apnd'") ) )
+
+        pointLayer.on("click", event =>  window.location = `${event.layer.feature.id}/` )
+
+        const highlight = layer => {
+            layer.bindTooltip(layer.feature.properties.name).openTooltip()
+            layer.color = '#900'
+
+            layer.setStyle({
+                weight: 5,
+                color: '#900',
+                dashArray: '',
+                fillOpacity: 0.7
+            });
+
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                layer.bringToFront();
+            }
+
+
+        }
+        const reset = layer => {
+            layer.unbindTooltip()
+            layer.color = '#00f'
+            pointLayer.resetStyle(layer);
+        }
+        pointLayer.on("mouseover", event => highlight(event.layer) )
+        pointLayer.on('mouseout', event => reset(event.layer) )
+
+        const overlays = {
+            "Airports<br><hr size='1px'>": pointLayer,
+            "Labels": airports,
+        }
+
+        L.control.layers(baseLayers, overlays).addTo(the_map);
+
+        const scale = L.control.scale()
+        scale.addTo(the_map)
+
+        // enable Alt-Click to find coordinate at click position (hand cursor not so precise, but we can zoom)
+        const popup = L.popup()
+        function onMapClick(e) {
+            if (e.originalEvent.altKey) {
+                popup
+                    .setLatLng(e.latlng)
+                    .setContent("+" + e.latlng.toString())
+                    .openOn(the_map)
+            }
+        }
+        the_map.on('click', onMapClick)
+
+
+    }
+    load()
+</script>
+</body>
+</html>
