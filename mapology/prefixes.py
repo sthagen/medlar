@@ -159,6 +159,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             cc_page: country_blurb(cc_hint),
             Cc_page: country_blurb(cc_hint).title(),
             LAT_LON: f'{prefix_lat},{prefix_lon}',
+            LIB_PATH_KEY: LIB_PATH,
             PATH: PATH_NAV,
             BASE_URL_TARGET: BASE_URL,
             ZOOM: str(DEFAULT_ZOOM),
@@ -169,7 +170,6 @@ def main(argv: Union[List[str], None] = None) -> int:
             'COUNTRY_COUNT_DISPLAY': f'{cc_count} region{"" if cc_count == 1 else "s"}',
             'BBOX': f' contained in lat, lon bounding box {bbox_disp}',
             FOOTER_HTML_KEY: FOOTER_HTML,
-            LIB_PATH_KEY: LIB_PATH,
             'DATA_ROWS': '\n'.join(data_rows) + '\n',
         }
         html_page = template.load_html(HTML_TEMPLATE, HTML_TEMPLATE_IS_EXTERNAL)
