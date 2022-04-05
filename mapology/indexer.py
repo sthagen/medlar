@@ -107,6 +107,7 @@ def main(argv: Union[List[str], None] = None) -> int:
 
         html_dict = {
             ANCHOR: 'prefix/',
+            LIB_PATH_KEY: LIB_PATH,
             PATH: PATH_NAV,
             LAT_LON: '0, 0',
             ZOOM: str(DEFAULT_ZOOM),
@@ -114,7 +115,6 @@ def main(argv: Union[List[str], None] = None) -> int:
             'NUMBER_REGIONS': str(regions),
             'TOTAL_AIRPORTS': str(total_airports),
             FOOTER_HTML_KEY: FOOTER_HTML,
-            LIB_PATH_KEY: LIB_PATH,
             'DATA_COLS': '\n'.join(data_cols),
             'DATA_ROWS': ''.join(data_rows),
         }
