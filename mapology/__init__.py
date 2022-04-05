@@ -1,3 +1,4 @@
+"""The mapology central data and name dispatch."""
 import logging
 import os
 import pathlib
