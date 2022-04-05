@@ -16,6 +16,11 @@ GEO_BASE_URL="https://example.com"
 GEO_LIB_PATH="/ndb/_/leaflet"
 GEO_PATH_NAV="/ndb/43"
 GEO_PREFIX_PATH="${GEO_PATH_NAV}/prefix"
+export GEO_FOOTER_HTML_CONTENT
+export GEO_BASE_URL
+export GEO_LIB_PATH
+export GEO_PATH_NAV
+export GEO_PREFIX_PATH
 ```
 
 ## Status
