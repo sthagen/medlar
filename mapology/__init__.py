@@ -1,4 +1,4 @@
-"""The mapology centrol data and name dispatch."""
+"""The mapology control data and name dispatch."""
 import logging
 import os
 import pathlib
@@ -16,7 +16,8 @@ FS_DB_ROOT_PATH = os.getenv('GEO_DB_ROOT_PATH', 'db')
 
 APP_ALIAS = 'mapology'
 APP_ENV = APP_ALIAS.upper()
-DEBUG = bool(os.getenv(f'{APP_ENV}_DEBUG', ''))
+DEBUG_ENV_VAR = f'{APP_ENV}_DEBUG'
+DEBUG = bool(os.getenv(DEBUG_ENV_VAR, ''))
 log = logging.getLogger()  # Temporary refactoring: module level logger
 LOG_FOLDER = pathlib.Path('logs')
 LOG_FILE = f'{APP_ALIAS}.log'
