@@ -622,6 +622,7 @@ def main(argv: Union[List[str], None] = None) -> int:
                 cc_page: country_blurb(cc_hint),
                 Cc_page: country_blurb(cc_hint).title(),
                 LAT_LON: f'{root_lat},{root_lon}',
+                LIB_PATH_KEY: LIB_PATH,
                 PATH: PATH_NAV,
                 BASE_URL_TARGET: BASE_URL,
                 URL: GOOGLE_MAPS_URL.format(lat=root_lat, lon=root_lon),
@@ -632,7 +633,6 @@ def main(argv: Union[List[str], None] = None) -> int:
                 'index.txt': f'airport-{root_icao}.json',
                 IC_PREFIX: ic_prefix,
                 FOOTER_HTML_KEY: FOOTER_HTML,
-                LIB_PATH_KEY: LIB_PATH,
                 'DATA_ROWS': '\n'.join(data_rows) + '\n',
             }
             html_page = template.load_html(HTML_TEMPLATE, HTML_TEMPLATE_IS_EXTERNAL)
