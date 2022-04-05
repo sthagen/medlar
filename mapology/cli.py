@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # pylint: disable=line-too-long
 """Generate geojson data based leaflet driven web app from flat data files."""
@@ -20,6 +19,8 @@ Synopsis:
     mapology prefix
 - render index page collecting prefixes:
     mapology index
+- render airport, prefix, and index page tree completely:
+    mapology tree
 - shave off some properties from the natural earth country data set:
     mapology shave
 - eject the templates into the folder given (default EJECTED) and create the folder if it does not exist:
@@ -44,6 +45,8 @@ def main(argv: Union[List[str], None] = None) -> int:
             call = prefixer.main
         elif command == 'index':
             call = indexer.main
+        elif command == 'tree':
+            call = ((icao.main, vector), (prefixer.main, []), (indexer.main, []))  # type: ignore
         elif command == 'shave':
             call = razor.main
         elif command == 'eject':
@@ -53,4 +56,13 @@ def main(argv: Union[List[str], None] = None) -> int:
         print(USAGE)
         return 0 if usage else 2
 
-    return call(vector)
+    if not isinstance(call, tuple):
+        return call(vector)
+
+    code = 0
+    for cmd, vec in call:
+        code = cmd(vec)
+        if code:
+            return code
+
+    return code
