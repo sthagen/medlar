@@ -10,6 +10,7 @@ FS_DB_STORE_PART = 'prefix-store'
 FS_DB_TABLE_PART = 'prefix-table'
 FS_DB_HULLS_PART = 'prefix-hulls'
 FS_DB_APT_SEARCH_PART = 'prefix-apt-search'
+FS_DB_REGION_COUNTRY_PART = 'prefix-country-region'
 
 DB_ROOT = pathlib.Path(FS_DB_ROOT_PATH)
 DB_FOLDER_PATHS = {
@@ -17,13 +18,15 @@ DB_FOLDER_PATHS = {
     'store': DB_ROOT / FS_DB_STORE_PART,
     'table': DB_ROOT / FS_DB_TABLE_PART,
     'apt_search': DB_ROOT / FS_DB_APT_SEARCH_PART,
- }
+    'region_country': DB_ROOT / FS_DB_REGION_COUNTRY_PART,
+}
 
 DB_INDEX_PATHS = {
     'hulls': DB_ROOT / f'{FS_DB_HULLS_PART}.json',
     'store': DB_ROOT / f'{FS_DB_STORE_PART}.json',
     'table': DB_ROOT / f'{FS_DB_TABLE_PART}.json',
     'apt_search': DB_ROOT / f'{FS_DB_APT_SEARCH_PART}.json',
+    'region_country': DB_ROOT / f'{FS_DB_REGION_COUNTRY_PART}.json',
 }
 PHeaderDict = Dict[str, Collection[str]]
 CC_HINT = 'CC_HINT'
@@ -53,7 +56,7 @@ JSON_PREFIX_TABLE_HEADER = {
     'airports': [],
 }
 JSON_PREFIX_APT_SEARCH_HEADER = []
-
+JSON_PREFIX_COUNTRY_HEADER = {}
 
 def ensure_fs_tree() -> None:
     """Ensure the DB folder tree exists."""
@@ -87,6 +90,11 @@ def hull_path(some_prefix: str) -> str:
 def apt_search_path(some_prefix: str) -> str:
     """DRY."""
     return str(DB_FOLDER_PATHS['apt_search'] / f'{some_prefix}.json')
+
+
+def region_country_path(some_prefix: str) -> str:
+    """DRY."""
+    return str(DB_FOLDER_PATHS['region_country'] / f'{some_prefix}.json')
 
 
 def add_prefix(icp: str, cc: str) -> PHeaderDict:
