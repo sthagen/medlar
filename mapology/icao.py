@@ -77,6 +77,12 @@ Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 # GOOGLE_MAPS_URL = f'https://www.google.com/maps/search/?api=1&query={{lat}}%2c{{lon}}'  # Map + pin Documented
 GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}'  # Sat + pin Undocumented
 
+APT_SEARCH_DATA = {
+    'title': '',
+    'url': '',
+    'body': '',
+}
+
 GEO_JSON_HEADER = {
     'type': 'FeatureCollection',
     'name': f'Airport - {ICAO} ({City}, {CC_HINT})',
@@ -506,6 +512,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     db.ensure_fs_tree()
     store_index = db.load_index('store')
     table_index = db.load_index('table')
+    apt_search_index = db.load_index('apt_search')
 
     slash, magic = '/', '/r/'
     tasks = expand_tasks(argv[0], slash, magic)
@@ -590,6 +597,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             # Process kinds' index and ensure kinds' prefix db is present
             prefix_store = db.update_aspect(store_index, ic_prefix, cc_hint, 'store')
             table_store = db.update_aspect(table_index, ic_prefix, cc_hint, 'table')
+            apt_search_index[root_icao] = str(db.DB_FOLDER_PATHS['apt_search'] / f'{root_icao}.json')
 
             ic_airport_names = set(airp['properties']['name'] for airp in prefix_store['features'])  # noqa
             ic_airport = add_airport(triplet, *markers)
@@ -610,6 +618,13 @@ def main(argv: Union[List[str], None] = None) -> int:
             with open(r_source_path, 'wt', encoding=ENCODING) as handle:
                 handle.write(full_r_source)
             log.debug('Wrote R Source to %s' % str(r_source_path))
+            search_data = copy.deepcopy(APT_SEARCH_DATA)
+            search_data['title'] = f'{root_icao} ({AIRPORT_NAME[root_icao].title()})'
+            search_data['url'] = f'{BASE_URL}/{FS_PREFIX_PATH}/{ic_prefix}/{root_icao}/'
+            search_data['body'] = f'Airport {AIRPORT_NAME[root_icao]}, {cc_hint}, {root_icao}, {ic_prefix}'
+            with open(apt_search_index[root_icao], 'wt', encoding=ENCODING) as handle:
+                json.dump(search_data, handle, indent=2)
+            log.debug(str(search_data))
 
             html_dict = {
                 f'{ANCHOR}/{IC_PREFIX_ICAO}': my_prefix_path,
@@ -651,6 +666,7 @@ def main(argv: Union[List[str], None] = None) -> int:
 
     db.dump_index('table', table_index)
     db.dump_index('store', store_index)
+    db.dump_index('apt_search', apt_search_index)
 
     return 0
 
