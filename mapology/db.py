@@ -84,6 +84,11 @@ def hull_path(some_prefix: str) -> str:
     return str(DB_FOLDER_PATHS['hulls'] / f'{some_prefix}.json')
 
 
+def apt_search_path(some_prefix: str) -> str:
+    """DRY."""
+    return str(DB_FOLDER_PATHS['apt_search'] / f'{some_prefix}.json')
+
+
 def add_prefix(icp: str, cc: str) -> PHeaderDict:
     """DRY."""
     geojson = copy.deepcopy(GEO_JSON_PREFIX_HEADER)
