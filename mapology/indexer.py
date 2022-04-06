@@ -63,6 +63,7 @@ def main(argv: Union[List[str], None] = None) -> int:
 
     store_index = db.load_index('store')
     table_index = db.load_index('table')
+    apt_search_index = db.load_index('apt_search')
 
     prefixes = sorted(table_index.keys())
     row_slot_set = set(prefix[0] for prefix in prefixes)
@@ -125,6 +126,15 @@ def main(argv: Union[List[str], None] = None) -> int:
     html_path = pathlib.Path(FS_PREFIX_PATH, 'index.html')
     with open(html_path, 'wt', encoding=ENCODING) as html_handle:
         html_handle.write(html_page)
+
+    search_index = []
+    for prefix in apt_search_index:
+        with open(apt_search_index[prefix], 'rt', encoding=ENCODING) as handle:
+            search_index.append(json.load(handle))
+
+    search_index_path = pathlib.Path('apt-search-index.json')
+    with open(search_index_path, 'wt', encoding=ENCODING) as handle:
+        json.dump(search_index, handle, indent=2)
 
     return 0
 
