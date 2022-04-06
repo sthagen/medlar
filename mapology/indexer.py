@@ -105,26 +105,26 @@ def main(argv: Union[List[str], None] = None) -> int:
         row.append('\n')
         data_rows.append(''.join(row))
 
-        html_dict = {
-            ANCHOR: 'prefix/',
-            LIB_PATH_KEY: LIB_PATH,
-            PATH: PATH_NAV,
-            LAT_LON: '0, 0',
-            ZOOM: str(DEFAULT_ZOOM),
-            BASE_URL_TARGET: BASE_URL,
-            'NUMBER_REGIONS': str(regions),
-            'TOTAL_AIRPORTS': str(total_airports),
-            FOOTER_HTML_KEY: FOOTER_HTML,
-            'DATA_COLS': '\n'.join(data_cols),
-            'DATA_ROWS': ''.join(data_rows),
-        }
-        html_page = template.load_html(HTML_TEMPLATE, HTML_TEMPLATE_IS_EXTERNAL)
-        for key, replacement in html_dict.items():
-            html_page = html_page.replace(key, replacement)
+    html_dict = {
+        ANCHOR: 'prefix/',
+        LIB_PATH_KEY: LIB_PATH,
+        PATH: PATH_NAV,
+        LAT_LON: '0, 0',
+        ZOOM: str(DEFAULT_ZOOM),
+        BASE_URL_TARGET: BASE_URL,
+        'NUMBER_REGIONS': str(regions),
+        'TOTAL_AIRPORTS': str(total_airports),
+        FOOTER_HTML_KEY: FOOTER_HTML,
+        'DATA_COLS': '\n'.join(data_cols),
+        'DATA_ROWS': ''.join(data_rows),
+    }
+    html_page = template.load_html(HTML_TEMPLATE, HTML_TEMPLATE_IS_EXTERNAL)
+    for key, replacement in html_dict.items():
+        html_page = html_page.replace(key, replacement)
 
-        html_path = pathlib.Path(FS_PREFIX_PATH, 'index.html')
-        with open(html_path, 'wt', encoding=ENCODING) as html_handle:
-            html_handle.write(html_page)
+    html_path = pathlib.Path(FS_PREFIX_PATH, 'index.html')
+    with open(html_path, 'wt', encoding=ENCODING) as html_handle:
+        html_handle.write(html_page)
 
     return 0
 
