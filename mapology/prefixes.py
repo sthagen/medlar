@@ -58,6 +58,12 @@ Point = collections.namedtuple('Point', ['label', 'lat', 'lon'])
 # GOOGLE_MAPS_URL = f'https://www.google.com/maps/search/?api=1&query={{lat}}%2c{{lon}}'  # Map + pin Documented
 GOOGLE_MAPS_URL = 'https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}'  # Sat + pin Undocumented
 
+REGION_COUNTRY_DATA = {
+    'region': '',
+    'url': '',
+    'country': '',
+}
+
 
 def main(argv: Union[List[str], None] = None) -> int:
     """Drive the prefix renderings."""
@@ -69,6 +75,7 @@ def main(argv: Union[List[str], None] = None) -> int:
     store_index = db.load_index('store')
     table_index = db.load_index('table')
     hulls_index = db.load_index('hulls')
+    region_country_index = db.load_index('region_country')
 
     prefix_hull_store = copy.deepcopy(hull.THE_HULLS)
     slash = '/'
@@ -89,6 +96,16 @@ def main(argv: Union[List[str], None] = None) -> int:
         region_name = table_store['name']
         cc_hint = cc.FROM_ICAO_PREFIX.get(prefix, 'No Country Entry Present')
         my_prefix_path = f'{FS_PREFIX_PATH}/{prefix}'
+
+        region_country_index[prefix] = str(db.DB_FOLDER_PATHS['region_country'] / f'{prefix}.json')
+        region_country_data = copy.deepcopy(REGION_COUNTRY_DATA)
+        region_country_data['region'] = prefix
+        region_country_data['url'] = f'{BASE_URL}/{FS_PREFIX_PATH}/{prefix}/'
+        region_country_data['country'] = f'{cc_hint}'
+        with open(region_country_index[prefix], 'wt', encoding=ENCODING) as handle:
+            json.dump(region_country_data, handle, indent=2)
+        log.info(str(region_country_data))
+
         airports = sorted(table_store['airports'], key=operator.itemgetter('icao'))
 
         message = f'processing {current :>3d}/{num_prefixes} {prefix} --> ({region_name}) ...'
@@ -187,6 +204,8 @@ def main(argv: Union[List[str], None] = None) -> int:
 
     with open(pathlib.Path(FS_PREFIX_PATH) / 'region-hulls-geo.json', 'wt', encoding=ENCODING) as handle:
         json.dump(prefix_hull_store, handle, indent=2)
+
+    db.dump_index('region_country', region_country_index)
 
     return 0
 
