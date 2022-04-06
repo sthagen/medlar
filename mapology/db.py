@@ -52,6 +52,7 @@ JSON_PREFIX_TABLE_HEADER = {
     },
     'airports': [],
 }
+JSON_PREFIX_APT_SEARCH_HEADER = []
 
 
 def ensure_fs_tree() -> None:
