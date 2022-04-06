@@ -9,18 +9,21 @@ from mapology import ENCODING, FS_DB_ROOT_PATH
 FS_DB_STORE_PART = 'prefix-store'
 FS_DB_TABLE_PART = 'prefix-table'
 FS_DB_HULLS_PART = 'prefix-hulls'
+FS_DB_APT_SEARCH_PART = 'prefix-apt-search'
 
 DB_ROOT = pathlib.Path(FS_DB_ROOT_PATH)
 DB_FOLDER_PATHS = {
     'hulls': DB_ROOT / FS_DB_HULLS_PART,
     'store': DB_ROOT / FS_DB_STORE_PART,
     'table': DB_ROOT / FS_DB_TABLE_PART,
-}
+    'apt_search': DB_ROOT / FS_DB_APT_SEARCH_PART,
+ }
 
 DB_INDEX_PATHS = {
     'hulls': DB_ROOT / f'{FS_DB_HULLS_PART}.json',
     'store': DB_ROOT / f'{FS_DB_STORE_PART}.json',
     'table': DB_ROOT / f'{FS_DB_TABLE_PART}.json',
+    'apt_search': DB_ROOT / f'{FS_DB_APT_SEARCH_PART}.json',
 }
 PHeaderDict = Dict[str, Collection[str]]
 CC_HINT = 'CC_HINT'
