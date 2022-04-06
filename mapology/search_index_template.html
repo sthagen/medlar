@@ -30,6 +30,12 @@
     <section>
         <h1>Search Index</h1>
         <div id="map"></div>
+      <h2>Keyword Search for Airports:</h2>
+      <p>The search executes in your client and is based on a cuckoo filter. The latter implicates maybe false positives but never false negatives (as far as the result set is smaller than 10000 airports.</p>
+      <input type="text" id="airport" onkeyup="doSearch()" placeholder="ICAO, Name, City, or Country">
+      <h2>Results (<span id="count">0</span>/9999):</h2>
+      <ol id="results">
+      </ol>
         <h2>Satellite Imagery &amp; More</h2>
         <p>NUMBER_REGIONS regions with TOTAL_AIRPORTS total airports available:</p>
         <table>
@@ -41,6 +47,59 @@
 <footer>
     <address><p>FOOTER_HTML</p></address>
 </footer>
+<!-- Note the usage of `type=module` here as this is an ES6 module -->
+<script type="module">
+  // Use ES module import syntax to import functionality from the module
+  // that we have compiled.
+  //
+  // Note that the `default` import is an initialization function which
+  // will "boot" the module and make it ready to use. Currently browsers
+  // don't support natively imported WebAssembly as an ES module, but
+  // eventually the manual initialization won't be required!
+  // import { search, default as init } from './tinysearch_engine.js';
+  import { search, default as init } from './tinysearch_engine.js';
+  window.search = search;
+
+  async function run() {
+    // First up we need to actually load the wasm file, so we use the
+    // default export to inform it where the wasm file is located on the
+    // server, and then we wait on the returned promise to wait for the
+    // wasm to be loaded.
+    //
+    // Note that instead of a string here you can also pass in an instance
+    // of `WebAssembly.Module` which allows you to compile your own module.
+    // Also note that the promise, when resolved, yields the wasm module's
+    // exports which is the same as importing the `*_bg` module in other
+    // modes
+    await init('./tinysearch_engine_bg.wasm');
+  }
+
+  run();
+</script>
+
+<script>
+  // And afterwards we can use all the functionality defined in wasm.
+  function doSearch() {
+    let value = document.getElementById("airport").value;
+    const arr = search(value, 9999).sort();
+    let ct = document.getElementById("count");
+    ct.innerHTML = arr.length;
+    let ul = document.getElementById("results");
+    ul.innerHTML = "";
+
+    for (i = 0; i < arr.length; i++) {
+      var li = document.createElement("li");
+
+      let elem = arr[i];
+      let elemlink = document.createElement('a');
+      elemlink.innerHTML = elem[0];
+      elemlink.setAttribute('href', elem[1]);
+      li.appendChild(elemlink);
+
+      ul.appendChild(li);
+    }
+  }
+</script>
 <script>
 
     function altHandler(event) {
