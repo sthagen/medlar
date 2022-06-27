@@ -58,6 +58,7 @@ JSON_PREFIX_TABLE_HEADER = {
 JSON_PREFIX_APT_SEARCH_HEADER = []
 JSON_PREFIX_COUNTRY_HEADER = {}
 
+
 def ensure_fs_tree() -> None:
     """Ensure the DB folder tree exists."""
     for db in DB_FOLDER_PATHS.values():
