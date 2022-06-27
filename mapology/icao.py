@@ -7,6 +7,16 @@ Valid Google Maps query GET URLs (official with map and pin - but no satellite):
 https://www.google.com/maps/search/?api=1&query={lat}%2c{lon}
 Old unofficial but as of 2020-11-04 still working satellite and pin:
 https://maps.google.com/maps?t=k&q=loc:{lat}+{lon}
+
+Create index entries like:
+[
+  {
+    "title": "LOXT (Tulln-Langenlebarn, Austria)",
+    "url": "./loxt/",
+    "body": "Airport LOXT (Tulln-Langenlebarn, Austria), LOX, LO, L, AUT, EUR"
+  },
+...
+]
 """
 import collections
 import copy
@@ -618,6 +628,7 @@ def main(argv: Union[List[str], None] = None) -> int:
             with open(r_source_path, 'wt', encoding=ENCODING) as handle:
                 handle.write(full_r_source)
             log.debug('Wrote R Source to %s' % str(r_source_path))
+
             search_data = copy.deepcopy(APT_SEARCH_DATA)
             search_data['title'] = f'{root_icao} ({AIRPORT_NAME[root_icao].title()})'
             search_data['url'] = f'{BASE_URL}/{FS_PREFIX_PATH}/{ic_prefix}/{root_icao}/'
