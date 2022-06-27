@@ -55,8 +55,9 @@ JSON_PREFIX_TABLE_HEADER = {
     },
     'airports': [],
 }
-JSON_PREFIX_APT_SEARCH_HEADER = []
-JSON_PREFIX_COUNTRY_HEADER = {}
+
+JSON_PREFIX_APT_SEARCH_HEADER = []  # type: ignore
+JSON_PREFIX_COUNTRY_HEADER = {}  # type: ignore
 
 
 def ensure_fs_tree() -> None:
