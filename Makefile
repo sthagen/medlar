@@ -1,16 +1,16 @@
 .DEFAULT_GOAL := all
-isort = isort mapology tests
-black = black mapology tests
+isort = isort mapology test
+black = black mapology test
 
 .PHONY: install
 install:
 	pip install -U pip wheel
-	pip install -r tests/requirements.txt
+	pip install -r test/requirements.txt
 	pip install -U .
 
 .PHONY: install-all
 install-all: install
-	pip install -r tests/requirements-dev.txt
+	pip install -r test/requirements-dev.txt
 
 .PHONY: isort
 format:
@@ -20,7 +20,7 @@ format:
 .PHONY: lint
 lint:
 	python setup.py check -ms
-	flake8 mapology/ tests/
+	flake8 mapology/ test/
 	$(isort) --check-only --df
 	$(black) --check --diff
 
