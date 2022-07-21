@@ -2,6 +2,7 @@
 
 Simple python filters generating leaflet driven apps.
 
+
 ## Installation
 
 `pip install mapology`
