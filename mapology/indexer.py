@@ -43,7 +43,7 @@ FOOTER_HTML_KEY = 'FOOTER_HTML'
 LIB_PATH_KEY = 'LIB_PATH'
 
 icao = 'icao_lower'
-ic_prefix_token = 'ic_prefix_lower'
+ic_prefix_token = 'ic_prefix_lower'  # nosec B105
 LAT_LON = 'LAT_LON'
 cc_page = 'cc_page'
 Cc_page = 'Cc_page'
