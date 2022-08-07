@@ -2,7 +2,7 @@
 import logging
 import os
 import pathlib
-from typing import no_type_check
+from typing import List, no_type_check
 
 ENCODING = 'utf-8'
 
@@ -23,6 +23,14 @@ LOG_FOLDER = pathlib.Path('logs')
 LOG_FILE = f'{APP_ALIAS}.log'
 LOG_PATH = pathlib.Path(LOG_FOLDER, LOG_FILE) if LOG_FOLDER.is_dir() else pathlib.Path(LOG_FILE)
 LOG_LEVEL = logging.INFO
+
+# [[[fill git_describe()]]]
+__version__ = '2022.8.4+parent.c7f09ef7'
+# [[[end]]] (checksum: 18b2041736060202db7f90641d05489e)
+__version_info__ = tuple(
+    e if '-' not in e else e.split('-')[0] for part in __version__.split('+') for e in part.split('.') if e != 'parent'
+)
+__all__: List[str] = []
 
 
 @no_type_check
