@@ -45,7 +45,7 @@ if not HTML_TEMPLATE:
     HTML_TEMPLATE = 'airport_page_template.html'
 
 REC_SEP = ','
-STDIN_TOKEN = '-'
+STDIN_TOKEN = '-'  # nosec B105
 TRIGGER_START_OF_DATA = "csv <- 'marker_label,lat,lon"
 TRIGGER_END_OF_DATA = "'"
 
