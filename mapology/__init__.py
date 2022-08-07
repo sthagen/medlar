@@ -25,8 +25,8 @@ LOG_PATH = pathlib.Path(LOG_FOLDER, LOG_FILE) if LOG_FOLDER.is_dir() else pathli
 LOG_LEVEL = logging.INFO
 
 # [[[fill git_describe()]]]
-__version__ = '2022.8.4+parent.c7f09ef7'
-# [[[end]]] (checksum: 18b2041736060202db7f90641d05489e)
+__version__ = '2022.8.7+parent.91e8d3ae'
+# [[[end]]] (checksum: 061755c2bd715a2f88da4e79e9f8fa7a)
 __version_info__ = tuple(
     e if '-' not in e else e.split('-')[0] for part in __version__.split('+') for e in part.split('.') if e != 'parent'
 )
