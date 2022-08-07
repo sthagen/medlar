@@ -139,3 +139,4 @@ current-bandit.json
 # Repository specific ignores
 db
 prefix
+ndb/
