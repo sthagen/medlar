@@ -131,8 +131,11 @@ dmypy.json
 # local dev stuff
 *~
 .idea
-local_publi.sh
-local
-prefix
+*.log
+local*
+.vscode/
+current-bandit.json
+
+# Repository specific ignores
 db
-local_*
+prefix
