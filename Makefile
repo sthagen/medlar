@@ -10,7 +10,6 @@ install:
 	pip install -U pip wheel
 	pip install -r test/requirements.txt
 	pip install -e . --config-settings editable_mode=strict
-	#pip install -U .
 
 .PHONY: install-all
 install-all: install
