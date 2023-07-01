@@ -11,6 +11,7 @@ Third party dependencies are documented in the folder [third-party](docs/third-p
 [![wheel](https://img.shields.io/pypi/wheel/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
 [![supported-versions](https://img.shields.io/pypi/pyversions/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
 [![supported-implementations](https://img.shields.io/pypi/implementation/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
+[![maintenance-status](https://img.shields.io/github/commit-activity/y/sthagen/medlar.svg?style=flat)](https://git.sr.ht/~sthagen/medlar/log)
 
 ## Documentation
 
