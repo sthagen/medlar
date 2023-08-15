@@ -1,8 +1,8 @@
 # Third Party Dependencies
 
 <!--[[[fill sbom_sha256()]]]-->
-The [SBOM in CycloneDX v1.4 JSON format](https://git.sr.ht/~sthagen/medlar/blob/default/sbom/cdx.json) with SHA256 checksum ([7ee1fc1c ...](https://git.sr.ht/~sthagen/medlar/blob/default/sbom/cdx.json.sha256 "sha256:7ee1fc1c108ac6849b39f51c26591451f59373bca68821b0426174d114c05b24")).
-<!--[[[end]]] (checksum: 60db4e38406a48f760704ed41495ef11)-->
+The [SBOM in CycloneDX v1.4 JSON format](https://git.sr.ht/~sthagen/medlar/blob/default/sbom/cdx.json) with SHA256 checksum ([0f8c5c3c ...](https://git.sr.ht/~sthagen/medlar/blob/default/sbom/cdx.json.sha256 "sha256:0f8c5c3cbb972392e667b8f396880b876fbd7787031779d9600f480ca919b17b")).
+<!--[[[end]]] (checksum: 6dc10866d7e039d2d24021c2e70faa09)-->
 
 None.
 
