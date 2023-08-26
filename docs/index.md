@@ -7,7 +7,7 @@ Making sense out of weakly defined trees.
 Third party dependencies are documented in the folder [third-party](third-party/README.md).
 
 [![version](https://img.shields.io/pypi/v/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlari/)
-[![downloads](https://pepy.tech/badge/medlar/month)](https://pepy.tech/project/medlar)
+[![downloads](https://static.pepy.tech/badge/medlar/month)](https://pepy.tech/project/medlar)
 [![wheel](https://img.shields.io/pypi/wheel/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
 [![supported-versions](https://img.shields.io/pypi/pyversions/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
 [![supported-implementations](https://img.shields.io/pypi/implementation/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
