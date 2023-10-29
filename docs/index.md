@@ -2,18 +2,15 @@
 
 Making sense out of weakly defined trees.
 
-[License: MIT](https://git.sr.ht/~sthagen/medlar/tree/default/item/LICENSE) |
-[Country of origin: Switzerland](https://git.sr.ht/~sthagen/medlar/tree/default/item/COUNTRY-OF-ORIGIN) |
-[Export control classification number(ECCN): EAR99](https://git.sr.ht/~sthagen/medlar/tree/default/item/EXPORT-CONTROL-CLASSIFICATION-NUMBER)
+[![license](badges/license-spdx-mit.svg)](https://git.sr.ht/~sthagen/medlar/tree/default/item/LICENSE)
+[![Country of Origin](badges/country-of-origin-name-switzerland-neutral.svg)](https://git.sr.ht/~sthagen/medlar/tree/default/item/COUNTRY-OF-ORIGIN)
+[![Export Classification Control Number (ECCN)](badges/export-control-classification-number_eccn-ear99-neutral.svg)](https://git.sr.ht/~sthagen/medlar/tree/default/item/EXPORT-CONTROL-CLASSIFICATION-NUMBER)
+[![Configuration](badges/configuration-sbom.svg)](third-party/index.html)
 
-Third party dependencies are documented in the folder [third-party](third-party/README.md).
-
-[![version](https://img.shields.io/pypi/v/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
-[![downloads](https://static.pepy.tech/badge/medlar/month)](https://pepy.tech/project/medlar)
-[![wheel](https://img.shields.io/pypi/wheel/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
-[![supported-versions](https://img.shields.io/pypi/pyversions/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
-[![supported-implementations](https://img.shields.io/pypi/implementation/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
-[![maintenance-status](https://img.shields.io/github/commit-activity/y/sthagen/medlar.svg?style=flat)](https://git.sr.ht/~sthagen/medlar/log)
+[![Version](https://img.shields.io/pypi/v/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
+[![Downloads](https://static.pepy.tech/badge/medlar/month)](https://pepy.tech/project/medlar)
+[![Supported Versions](https://img.shields.io/pypi/pyversions/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
+[![Maintenance Status](https://img.shields.io/github/commit-activity/y/sthagen/medlar.svg?style=flat)](https://git.sr.ht/~sthagen/medlar/log)
 
 ## Bug Tracker
 
