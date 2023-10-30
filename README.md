@@ -8,7 +8,7 @@ Making sense out of weakly defined trees.
 [![Configuration](docs/badges/configuration-sbom.svg)](https://git.sr.ht/~sthagen/medlar/tree/default/item/docs/third-party/README.md)
 
 [![Version](https://img.shields.io/pypi/v/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
-[![Downloads](https://static.pepy.tech/badge/medlar/month)](https://pepy.tech/project/medlar)
+[![Downloads](docs/badges/downloads-per-month.svg)](https://pepy.tech/project/medlar)
 [![Supported Versions](https://img.shields.io/pypi/pyversions/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
 [![Maintenance Status](docs/badges/commits-per-year.svg)](https://git.sr.ht/~sthagen/medlar/log)
 
