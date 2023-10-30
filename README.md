@@ -10,7 +10,7 @@ Making sense out of weakly defined trees.
 [![Version](https://img.shields.io/pypi/v/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
 [![Downloads](https://static.pepy.tech/badge/medlar/month)](https://pepy.tech/project/medlar)
 [![Supported Versions](https://img.shields.io/pypi/pyversions/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
-[![Maintenance Status](https://img.shields.io/github/commit-activity/y/sthagen/medlar.svg?style=flat)](https://git.sr.ht/~sthagen/medlar/log)
+[![Maintenance Status](docs/badges/downloads-per-month.svg)](https://git.sr.ht/~sthagen/medlar/log)
 
 ## Documentation
 
