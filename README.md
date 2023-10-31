@@ -9,7 +9,7 @@ Making sense out of weakly defined trees.
 
 [![Version](docs/badges/latest-release.svg)](https://pypi.python.org/pypi/medlar/)
 [![Downloads](docs/badges/downloads-per-month.svg)](https://pepy.tech/project/medlar)
-[![Supported Versions](https://img.shields.io/pypi/pyversions/medlar.svg?style=flat)](https://pypi.python.org/pypi/medlar/)
+[![Python](docs/badges/python-versions.svg)](https://pypi.python.org/pypi/medlar/)
 [![Maintenance Status](docs/badges/commits-per-year.svg)](https://git.sr.ht/~sthagen/medlar/log)
 
 ## Documentation
