@@ -1,7 +1,7 @@
 {
   "medlar": {
-    "version": "7.3.2",
-    "timestamp": "2023-12-02T15:26:44.055241",
+    "coverage_tool_version": "7.3.2",
+    "timestamp": "2023-12-02 16:25:17 +00:00",
     "branch_coverage": false,
     "show_contexts": true,
     "covered_lines": 0,
@@ -9,6 +9,20 @@
     "percent_covered": 0,
     "percent_covered_display": "0.00",
     "missing_lines": 2,
-    "excluded_lines": 0
+    "excluded_lines": 0,
+    "node_id": "c79891e5-aabf-3a83-95b9-588edcd8327f",
+    "nfiles": 1,
+    "files": [
+      "medlar/__init__.py"
+    ],
+    "blake3": "95ade67b18f0ea1ba784f5259d19ef7d89d613335baa6fcfe137a1a52c2f776f",
+    "blake2": "b5a0e043b5659b138d5f9242e922c693d4020d5f4ababee03e55844453a1f2d822dd87fde715e5a79d8574254b73bcf2542d66e60e6deaaa62585b3aef977ccd",
+    "sha512": "79ee5edf1ab9e933aa6455dbefc02d0df7a5a86d5f84f4eef3776b39c48663fa26400d6ff8e8cab57cab9895c74a7a23a6c04b10998bb1f2323ab1b0d316cff3",
+    "sha384": "e14306475235474007ef467d1530cd57bf27119afc136d74de11511c91d7fe5bedbcf144aaf283e6dfeef477e96bb902",
+    "sha256": "0a9b07210f5e6de4b6b087478ffd318d791014db255f18af6487627592e918b5",
+    "sha1": "323e733175baf04a500e33e37848d4de59d21c47",
+    "md5": "6ea9d2ef286947a58e133d78586c4204",
+    "python_version": "3.10.12",
+    "entropy": 5.015636
   }
 }
