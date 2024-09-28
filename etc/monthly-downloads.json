@@ -32,11 +32,6 @@
     },
     {
       "category": "null",
-      "date": "2024-03",
-      "downloads": 1
-    },
-    {
-      "category": "null",
       "date": "2024-04",
       "downloads": 9
     },
@@ -63,7 +58,7 @@
     {
       "category": "null",
       "date": "2024-09",
-      "downloads": 13
+      "downloads": 20
     }
   ],
   "package": "medlar",
