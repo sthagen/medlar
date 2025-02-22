@@ -27,11 +27,6 @@
     },
     {
       "category": "3.9",
-      "date": "2024-08",
-      "downloads": 1
-    },
-    {
-      "category": "3.9",
       "date": "2024-10",
       "downloads": 6
     },
@@ -43,7 +38,7 @@
     {
       "category": "null",
       "date": "2024-08",
-      "downloads": 9
+      "downloads": 7
     },
     {
       "category": "null",
@@ -73,7 +68,7 @@
     {
       "category": "null",
       "date": "2025-02",
-      "downloads": 35
+      "downloads": 37
     }
   ],
   "package": "medlar",
