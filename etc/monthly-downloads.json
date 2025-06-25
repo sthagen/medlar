@@ -13,7 +13,7 @@
     {
       "category": "3.11",
       "date": "2025-06",
-      "downloads": 2
+      "downloads": 4
     },
     {
       "category": "3.12",
@@ -68,7 +68,7 @@
     {
       "category": "null",
       "date": "2025-06",
-      "downloads": 6
+      "downloads": 7
     }
   ],
   "package": "medlar",
